@@ -154,3 +154,13 @@ pub enum EndpointType
     ISOCHRONOUS = 2,
     INTERRUPT   = 3,
 }
+
+#[repr(C)]
+pub struct SetupPacket
+{
+    pub bm_request: u8,
+    pub b_request: u8,
+    pub w_value: u16,
+    pub w_index: u16,
+    pub w_length: u16,
+}
