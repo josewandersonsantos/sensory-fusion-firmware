@@ -30,6 +30,7 @@ pub const EP_RX_VALID: u16 = (usb_types::STATTX_Status::VALID as u16) << usb_typ
 pub const EP_TX_VALID: u16 = (usb_types::STATTX_Status::VALID as u16) << usb_types::USBEPnR::STAT_TX as u8;
 pub const EP_TX_NAK:   u16 = (usb_types::STATTX_Status::NAK as u16)   << usb_types::USBEPnR::STAT_TX as u8;
 pub const EP_TX_STALL: u16 = (usb_types::STATTX_Status::STALL as u16) << usb_types::USBEPnR::STAT_TX as u8;
+pub const EP_RX_STALL: u16 = (usb_types::STATRX_Status::STALL as u16) << usb_types::USBEPnR::STAT_RX as u8;
 
 // ========================
 // LOW LEVEL USB FUNCTIONS
@@ -152,10 +153,10 @@ pub fn stall_ep(epn: usize)
     {
         let mut val = read_ep(epn);
 
-        val &= !EP_CTR_RX | EP_CTR_TX;
+        val &= !(EP_CTR_RX | EP_CTR_TX);
         val &= !EP_TOGGLE_RX;
-
         val ^= EP_TX_STALL;
+        val ^= EP_RX_STALL;
 
         write_ep(epn, val);
     }
