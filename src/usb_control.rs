@@ -10,25 +10,25 @@ use crate::usb_driver;
 use crate::usb_types;
 use crate::usb_endpoint;
 
-fn get_descriptor(descriptors: &usb_types::Descriptors, wvalue: u16) -> &[u8]
+fn get_descriptor(descriptors: &usb_types::Descriptors, wvalue: u16) -> Option<&[u8]>
 {
     let desc_type  = (wvalue >> 8) as u8;
     let desc_index = (wvalue & 0xFF) as u8;
     
     match desc_type
     {
-        1 => &descriptors.device_descriptor,
-        2 => &descriptors.config_descriptor,
+        1 => Some(&descriptors.device_descriptor),
+        2 => Some(&descriptors.config_descriptor),
         3 => 
             match desc_index
             {
-                0 => &descriptors.string0,
-                1 => &descriptors.string1,
-                2 => &descriptors.string2,
-                3 => &descriptors.string3,
-                _ => &descriptors.string0,
+                0 => Some(&descriptors.string0),
+                1 => Some(&descriptors.string1),
+                2 => Some(&descriptors.string2),
+                3 => Some(&descriptors.string3),
+                _ => None,
             },
-        _ => &descriptors.string0
+        _ => None
     }
 }
 
@@ -36,7 +36,7 @@ fn handle_get_descriptor(ep: &mut usb_endpoint::Endpoint, descriptors: &usb_type
 {
     let data = get_descriptor(descriptors, wvalue);
 
-    if data != &[]
+    if let Some(data) = data
     {
         let len = core::cmp::min(data.len(), wlength as usize);
         ep.length = data.len();
@@ -94,7 +94,7 @@ fn handle_set_configuration(epn: usize)
     usb_driver::set_stat_tx_valid(epn);
 }
 
-pub fn handle_setup(ep: &mut usb_endpoint::Endpoint, descriptors: &usb_types::Descriptors) -> u8
+pub fn handle_setup(ep: &mut usb_endpoint::Endpoint, descriptors: &usb_types::Descriptors) -> Option<[u8;8]>
 {
     let mut setup = [0u8; 8];
     // Read 8-byte SETUP packet from PMA
@@ -120,32 +120,30 @@ pub fn handle_setup(ep: &mut usb_endpoint::Endpoint, descriptors: &usb_types::De
         0 => 
         {
             handle_get_status(ep, wlength);
-            return 0;
             // handle_get_descriptor 1, 18)
         },
         5 => 
         {
             handle_set_address(ep, wvalue);
-            return 0;
         },
         // GET_DESCRIPTOR
         6 => 
         {
             handle_get_descriptor(ep, descriptors, wvalue, wlength);
-            return 0;
         },
         // SET_CONFIGURATION
         9 => 
         {
             handle_set_configuration(ep.number as usize);
-            return 0;
         },
         _ =>
         {
             // Indicate setup not handled, so class-specific handler can try to process it
-            return 1;
+            return Some(setup);
         }
     }
+
+    return None;
 }
 
 /// Called when an IN transaction completes
