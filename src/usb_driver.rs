@@ -365,7 +365,7 @@ pub fn configure_ep(ep: &mut usb_endpoint::Endpoint, ep_type: usb_types::Endpoin
         
         // Bits [3:0]  = EA[3:0]  → Endpoint Address = 0
         // Bits [8:9]  = EP_TYPE  → 01 = Control
-        let epr = get_ep_register(0);
+        let epr = get_ep_register(ep.number as usize);
         *epr ^= (ep_type as u16) << (usb_types::USBEPnR::EP_TYPE as u8) |
                 (usb_types::STATTX_Status::NAK as u16) << (usb_types::USBEPnR::STAT_TX as u8) |
                 (usb_types::STATTX_Status::VALID as u16) << (usb_types::USBEPnR::STAT_RX as u8);
