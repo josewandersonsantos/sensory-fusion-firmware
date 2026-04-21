@@ -75,7 +75,7 @@ fn handle_set_address(ep: &mut usb_endpoint::Endpoint, wValue: u16)
     // Store the new address temporarily in the endpoint handler struct
     ep.address = new_address;
     
-    usb_driver::write_count_tx(ep.number as usize, 0); // ZLP
+    usb_driver::write_tx_count(ep.number as usize, 0); // ZLP
     usb_driver::set_stat_tx_valid(ep.number as usize);
 }
 
@@ -90,7 +90,7 @@ fn handle_set_configuration(epn: usize)
      */
 
     // responde ZLP
-    usb_driver::write_count_tx(epn, 0);
+    usb_driver::write_tx_count(epn, 0);
     usb_driver::set_stat_tx_valid(epn);
 }
 
