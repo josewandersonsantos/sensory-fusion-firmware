@@ -16,9 +16,16 @@ mod rcc;
 mod exti;
 mod gpio;
 mod usart;
-mod usb_types;
+
+mod usb_cdc;
+mod usb_core;
+mod usb_class;
+mod usb_control;
+mod usb_driver;
 mod usb_endpoint;
-mod usb;
+mod usb_types;
+mod usb_peripheral;
+
 mod crc;
 mod watchdog;
 mod irq;
@@ -53,7 +60,8 @@ pub extern "C" fn SysTick_Handler()
 #[no_mangle]
 pub extern "C" fn USB_LP_CAN_RX0_Handler()
 {
-    usb::handle_usb_interrupt();
+    // usb_peripheral::handle_usb_interrupt();
+    usb_cdc::handle_usb_interrupt();
 }
 
 #[no_mangle]
@@ -181,7 +189,8 @@ fn main() -> !
     gpio::configure_pin(mcu::GPIOA_BASE, mcu::GPIO12, gpio::GpioMode::AlternateFunction, gpio::GpioConfig::AfPushPull, Some(gpio::GpioSpeed::Speed50MHz)); // DP
     // PA15 (USB Pull-up)
     gpio::configure_pin(mcu::GPIOB_BASE, mcu::GPIO15, gpio::GpioMode::Output, gpio::GpioConfig::PushPull, Some(gpio::GpioSpeed::Speed2MHz));
-    usb::init();
+    // usb_peripheral::init();
+    usb_cdc::init();
 
     loop
     {
