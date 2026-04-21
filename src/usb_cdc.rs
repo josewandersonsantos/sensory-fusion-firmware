@@ -328,7 +328,10 @@ pub fn handler_endpoint(epn: usize)
             usb_driver::clear_ctr_rx(epn);
             if epv & (1 << usb_types::USBEPnR::SETUP as u16) != 0 // SETUP bit set
             {
-                usb_control::handle_setup(ep, &DESCRIPTORS);
+                if usb_control::handle_setup(ep, &DESCRIPTORS) == 1
+                {
+                    handle_class_request(ep);
+                }
             }
             else
             {
@@ -350,10 +353,20 @@ pub fn handler_endpoint(epn: usize)
 
 }
 
-fn handle_class_request(ep: &mut usb_endpoint::Endpoint, setup: &[u8; 8], wvalue: u16, wlength: u16)
+fn handle_class_request(ep: &mut usb_endpoint::Endpoint)
 {
-    let brequest = setup[1];
+    let mut setup = [0u8; 8];
 
+    usb_driver::pma_read(ep.rx_addr, &mut setup, 8);
+    ep.state = usb_endpoint::EndpointState::Setup;
+
+    // bRequest
+    let brequesttype = setup[0];
+    let brequest     = setup[1];
+    let wvalue      = ((setup[3] as u16) << 8) | (setup[2] as u16);
+    let windex      = ((setup[5] as u16) << 8) | (setup[4] as u16);
+    let wlength     = ((setup[7] as u16) << 8) | (setup[6] as u16);
+    
     match brequest
     {
         // =========================
