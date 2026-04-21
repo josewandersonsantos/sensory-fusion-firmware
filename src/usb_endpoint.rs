@@ -19,7 +19,7 @@ pub struct Endpoint
     pub address: u8,
     pub ep_type: usb_types::EndpointType,
     pub state: EndpointState,
-    pub data_buffer: [u8; 64],
+    pub data_buffer: [u8; 128],
     pub length: usize,
     pub position: usize,
     pub tx_addr: u16,
@@ -36,7 +36,7 @@ const DEFAULT_EP: Endpoint = Endpoint
     ep_type: usb_types::EndpointType::CONTROL,
 
     state: EndpointState::Idle,
-    data_buffer: [0; 64],
+    data_buffer: [0; 128],
     length: 0,
     position: 0,
     tx_addr: 0,  // ADDR_TX field in BTABLE
