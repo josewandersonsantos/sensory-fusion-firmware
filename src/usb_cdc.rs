@@ -15,7 +15,7 @@ const DEVICE_DESCRIPTOR: [u8; 18] =
     0x12,         // bLength
     1,            // bDescriptorType = DEVICE
     0x00, 0x02,   // bcdUSB = 2.00
-    0x00,         // bDeviceClass
+    0x02,         // bDeviceClass (CDC)
     0x00,         // bDeviceSubClass
     0x00,         // bDeviceProtocol
     0x40,         // bMaxPacketSize0 = 64 bytes
@@ -29,33 +29,69 @@ const DEVICE_DESCRIPTOR: [u8; 18] =
     0x1           // bNumConfigurations
 ];
 
-const CONFIG_DESCRIPTOR: [u8; 25] =
+const CONFIG_DESCRIPTOR: [u8; 67] =
 [
     // CONFIG
     0x09, 0x02,
-    0x19, 0x00, // total length = 25
-    0x01,       // 1 interface
+    0x43, 0x00, // total length = 67
+    0x02,       // 2 interfaces
     0x01,
     0x00,
     0x80,
     0x32,
 
-    // INTERFACE
+    // INTERFACE 0
     0x09, 0x04,
     0x00, // interface 0
     0x00,
     0x01, // 1 endpoint
-    0xFF, // vendor specific
-    0x00,
-    0x00,
+    0x02, // CDC
+    0x02, // ACM
+    0x01,
     0x00,
 
-    // ENDPOINT IN
+    // HEADER
+    0x05, 0x24, 0x00, 0x10, 0x01,
+
+    // CALL MANAGEMENT
+    0x05, 0x24, 0x01, 0x03, 0x01,
+
+    // ACM
+    0x04, 0x24, 0x02, 0x02,
+
+    // UNION
+    0x05, 0x24, 0x06, 0x00, 0x01,
+
+    // ENDPOINT IN (CONTROL)
     0x07, 0x05,
     0x81, // IN EP1
-    0x02, // bulk
+    0x03, // interrupt
+    0x08, 0x00,
+    0x10,
+    
+    // INTERFACE 1 DATA
+    0x09, 0x04,
+    0x01, // interface 1
+    0x00,
+    0x02, // 2 endpoints
+    0x0A, // DATA CLASS
+    0x00,
+    0x00,
+    0x00,
+    
+    // BULK OUT
+    0x07, 0x05,
+    0x02, // EP2 OUT
+    0x02, // BULK
     0x40, 0x00,
-    0x00
+    0x00,
+    
+    // BULK IN
+    0x07, 0x05,
+    0x83, // EP3 IN
+    0x02,
+    0x40, 0x00,
+    0x00,
 ];
 
 const CDC_STRING0: [u8; 4] =
@@ -88,6 +124,14 @@ const STRING_DESCRIPTORS: [&'static [u8]; 4] =
     &CDC_STRING0, &CDC_STRING1, &CDC_STRING2, &CDC_STRING3,
 ];
 
+static mut LINE_CODING: [u8; 7] =
+[
+    0x00, 0xC2, 0x01, 0x00, // 115200
+    0x00, // stop bits
+    0x00, // parity
+    0x08  // data bits
+];
+
 const DESCRIPTORS: usb_types::Descriptors = usb_types::Descriptors
 {
     device_descriptor: DEVICE_DESCRIPTOR,
@@ -105,7 +149,7 @@ static mut EP0_CONTROL: usb_endpoint::Endpoint = usb_endpoint::Endpoint
     ep_type: usb_types::EndpointType::CONTROL,
 
     state: usb_endpoint::EndpointState::Idle,
-    data_buffer: [0; 64],
+    data_buffer: [0; 128],
     length: 0,
     position: 0,
     tx_addr: 0x40,    // ADDR_TX field in BTABLE
@@ -114,14 +158,14 @@ static mut EP0_CONTROL: usb_endpoint::Endpoint = usb_endpoint::Endpoint
     rx_count: 0x8400, // COUNT_RX field in BTABLE (for OUT endpoints, this is set by hardware to the number of bytes received)
 };
 
-static mut EP1_BULK_IN: usb_endpoint::Endpoint = usb_endpoint::Endpoint
+static mut EP1_INTERRUPT_IN: usb_endpoint::Endpoint = usb_endpoint::Endpoint
 {
     number: usb_types::Endpoints::EP1,
     address: 0x81, // IN endpoint 1
-    ep_type: usb_types::EndpointType::BULK,
+    ep_type: usb_types::EndpointType::INTERRUPT,
 
     state: usb_endpoint::EndpointState::Idle,
-    data_buffer: [0; 64],
+    data_buffer: [0; 128],
     length: 0,
     position: 0,
     tx_addr: 0x40,  // ADDR_TX field in BTABLE
@@ -137,7 +181,23 @@ static mut EP2_BULK_OUT: usb_endpoint::Endpoint = usb_endpoint::Endpoint
     ep_type: usb_types::EndpointType::BULK,
 
     state: usb_endpoint::EndpointState::Idle,
-    data_buffer: [0; 64],
+    data_buffer: [0; 128],
+    length: 0,
+    position: 0,
+    tx_addr: 0,     // Not used for OUT endpoint
+    rx_addr: 0x80,  // ADDR_RX field in BTABLE
+    tx_count: 0,          // Not used for OUT endpoint
+    rx_count: 0,          // COUNT_RX field in BTABLE (set by hardware)
+};
+
+static mut EP3_BULK_IN: usb_endpoint::Endpoint = usb_endpoint::Endpoint
+{
+    number: usb_types::Endpoints::EP3,
+    address: 0x83, // IN endpoint 3
+    ep_type: usb_types::EndpointType::BULK,
+
+    state: usb_endpoint::EndpointState::Idle,
+    data_buffer: [0; 128],
     length: 0,
     position: 0,
     tx_addr: 0,     // Not used for OUT endpoint
@@ -226,15 +286,19 @@ pub fn handler_reset(epn: usize)
         {
             0 =>
             {
-                usb_driver::configure_ep(&mut EP0_CONTROL, usb_types::EndpointType::CONTROL);
+                usb_driver::configure_ep(&mut EP0_CONTROL, EP0_CONTROL.ep_type);
             }
             1 =>
             {
-                usb_driver::configure_ep(&mut EP1_BULK_IN, usb_types::EndpointType::BULK);
+                usb_driver::configure_ep(&mut EP1_INTERRUPT_IN, EP1_INTERRUPT_IN.ep_type);
             }
             2 =>
             {
-                usb_driver::configure_ep(&mut EP2_BULK_OUT, usb_types::EndpointType::BULK);
+                usb_driver::configure_ep(&mut EP2_BULK_OUT, EP2_BULK_OUT.ep_type);
+            }
+            3 =>
+            {
+                usb_driver::configure_ep(&mut EP3_BULK_IN, EP3_BULK_IN.ep_type);
             }
             _=> {return;}
         }
@@ -250,8 +314,9 @@ pub fn handler_endpoint(epn: usize)
         let ep = match epn
         {
             0 => &mut EP0_CONTROL,
-            1 => &mut EP1_BULK_IN,
+            1 => &mut EP1_INTERRUPT_IN,
             2 => &mut EP2_BULK_OUT,
+            3 => &mut EP3_BULK_IN,
             _ => { return; }
         };
 
@@ -285,14 +350,52 @@ pub fn handler_endpoint(epn: usize)
 
 }
 
-fn handle_class_request(epn: usize, setup: &[u8; 8]) -> bool
+fn handle_class_request(ep: &mut usb_endpoint::Endpoint, setup: &[u8; 8], wvalue: u16, wlength: u16)
 {
     let brequest = setup[1];
-    match brequest {
-        0x20 => { /* SET_LINE_CODING */ true }
-        0x21 => { /* GET_LINE_CODING */ true }
-        // ...
-        _ => false,
+
+    match brequest
+    {
+        // =========================
+        // SET_LINE_CODING (HOST → DEVICE)
+        // =========================
+        0x20 =>
+        {
+            // host will send 7 bytes later
+            ep.state = usb_endpoint::EndpointState::DataOut;
+        }
+
+        // =========================
+        // GET_LINE_CODING (DEVICE → HOST)
+        // =========================
+        0x21 =>
+        {
+            unsafe
+            {
+                ep.data_buffer[..7].copy_from_slice(&LINE_CODING);
+            }
+
+            ep.length = 7;
+            ep.position = 0;
+            ep.state = usb_endpoint::EndpointState::DataIn;
+
+            usb_driver::send_next_packet(ep.number as usize, ep.tx_addr, ep.length, &mut ep.position, &ep.data_buffer);
+        }
+
+        // =========================
+        // SET_CONTROL_LINE_STATE
+        // =========================
+        0x22 =>
+        {
+            // só precisa responder ZLP
+            usb_driver::write_count_tx(ep.number as usize, 0);
+            usb_driver::set_stat_tx_valid(ep.number as usize);
+        }
+
+        _ =>
+        {
+            usb_driver::stall_ep(ep.number as usize);
+        }
     }
 }
 
@@ -305,19 +408,13 @@ pub fn init()
     unsafe 
     {
         usb_driver::configure_ep(&mut EP0_CONTROL, usb_types::EndpointType::CONTROL);
-        usb_driver::configure_ep(&mut EP1_BULK_IN, usb_types::EndpointType::BULK);
+        usb_driver::configure_ep(&mut EP1_INTERRUPT_IN, usb_types::EndpointType::INTERRUPT);
         usb_driver::configure_ep(&mut EP2_BULK_OUT, usb_types::EndpointType::BULK);
+        usb_driver::configure_ep(&mut EP3_BULK_IN, usb_types::EndpointType::BULK);
 
         usb_driver::enable_usb_peripheral();
     }
 }
 
-// fn configure_class_endpoints() {
-//     // EP1 IN (bulk), EP2 OUT (bulk), EP3 IN (interrupt) etc.
-//     usb::hw::configure_ep(1, 0x81, usb_types::EndpointType::BULK, 0xC0, 0x100);
-//     usb::hw::configure_ep(2, 0x02, usb_types::EndpointType::BULK, 0x140, 0x180);
-//     // ...
-// }
-
-fn on_data_out(epn: usize, data: &[u8]) { /* log ou buffer */ }
+fn on_data_out(epn: usize, data: &[u8]) { /* log or buffer */ }
 fn on_data_in(epn: usize) {}
