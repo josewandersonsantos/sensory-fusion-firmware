@@ -1,3 +1,6 @@
+//! USB peripheral initialization and management for STM32F103C8T6 (Blue Pill)
+//! This module sets up the USB peripheral, configures endpoints, and handles USB interrupts.
+
 #![allow(dead_code)]
 #![allow(non_camel_case_types)]
 
@@ -7,13 +10,6 @@ use crate::rcc;
 use crate::mcu;
 use crate::gpio;
 use crate::usb_types;
-use crate::usb_endpoint;
-
-/// USB Low Priority Interrupt Handler
-pub fn handle_usb_interrupt()
-{
-    usb_endpoint::handler_endpoint_interrupt();
-}
 
 /// Enables the Buffer Table (BTABLE) and clears EP0 register
 fn enable_btable()
@@ -21,10 +17,6 @@ fn enable_btable()
     // Set BTABLE address to 0x0000 (start of PMA)
     let usb_btable = mcu::USB_BTABLE as *mut u16;
     unsafe { core::ptr::write_volatile(usb_btable, 0x0000); }
-
-    // // Clear EP0R register
-    // let ep0r = mcu::USB_EP0R as *mut u16;
-    // unsafe { core::ptr::write_volatile(ep0r, 0x0000); }
 }
 
 pub fn reconnect()
@@ -87,15 +79,3 @@ pub fn init()
     //reconnect();
 
 }
-
-// /// Placeholder for future serial write (CDC or custom)
-// pub fn write(data: u8)
-// {
-//     // TODO: Implement data transmission
-// }
-
-// /// Placeholder for future bulk write
-// pub fn write_bytes(data: &[u8], len: u16)
-// {
-//     // TODO: Implement data transmission
-// }
