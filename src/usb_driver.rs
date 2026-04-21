@@ -1,10 +1,12 @@
 //! Low-level USB driver: EPn registers, PMA, BTABLE
 
-#![allow(dead_code)]
+#![allow(non_snake_case)]
+#![allow(unused_variables)]
 
 use crate::mcu;
 use crate::utils;
 use crate::usb_types;
+use crate::usb_endpoint;
 
 // ========================
 // ENDPOINT REGISTERS
@@ -37,7 +39,7 @@ pub fn enable_usb_peripheral()
     utils::set_bit16(mcu::USB_DADDR as *mut u16, usb_types::USBDADDR::EF as u8);
 }
 
-fn get_ep_register(epn: usize) -> *mut u16
+pub fn get_ep_register(epn: usize) -> *mut u16
 {
     let ep = match epn
     {
@@ -205,7 +207,7 @@ pub fn pma_write(addr: u16, buffer: &[u8])
 }
 
 /// Writes the TX byte count for Endpoint 0 into PMA
-fn write_count_tx(epn: usize, count: u16)
+pub fn write_count_tx(epn: usize, count: u16)
 {
     unsafe
     {
@@ -224,7 +226,7 @@ fn write_count_tx(epn: usize, count: u16)
 }
 
 /// Sends the next chunk of data during a Data IN stage
-fn send_next_packet(epn: usize, addr_tx: u16, len: usize, pos: &mut usize, data: &[u8])
+pub fn send_next_packet(epn: usize, addr_tx: u16, len: usize, pos: &mut usize, data: &[u8])
 {
     let chunk =
     {
@@ -242,15 +244,14 @@ fn send_next_packet(epn: usize, addr_tx: u16, len: usize, pos: &mut usize, data:
     set_stat_tx_valid(epn);
 }
 
-// usb/hw.rs
-pub fn configure_ep(epn: usb_types::Endpoints, ep_addr: u8, ep_type: usb_types::EndpointType, tx_addr: u16, rx_addr: u16)
+pub fn configure_ep(ep: &mut usb_endpoint::Endpoint, ep_type: usb_types::EndpointType)
 {
-    let mut btable_rx_count: usize = 0;  
-    let mut btable_rx_addr: usize  = 0;  
-    let mut btable_tx_count: usize = 0;  
+    let mut btable_rx_count: usize = 0;
+    let mut btable_rx_addr: usize  = 0;
+    let mut btable_tx_count: usize = 0;
     let mut btable_tx_addr: usize  = 0;
 
-    match epn
+    match ep.number
     {
         // Configures Endpoint 0 buffers and registers
         usb_types::Endpoints::EP0 =>
@@ -284,32 +285,64 @@ pub fn configure_ep(epn: usb_types::Endpoints, ep_addr: u8, ep_type: usb_types::
             btable_tx_count = usb_types::BTABLE_ADDRESS::EP3_COUNT_TX as usize;
             btable_tx_addr  = usb_types::BTABLE_ADDRESS::EP3_ADDR_TX as usize;
         },
-        /*
-         * TODO Untill Endpoint 7
-         * ...
-         */
-        _ => return
+        // Configures Endpoint 4 buffers and registers
+        usb_types::Endpoints::EP4 =>
+        {
+            btable_rx_count = usb_types::BTABLE_ADDRESS::EP4_COUNT_RX as usize;
+            btable_rx_addr  = usb_types::BTABLE_ADDRESS::EP4_ADDR_RX as usize;
+            btable_tx_count = usb_types::BTABLE_ADDRESS::EP4_COUNT_TX as usize;
+            btable_tx_addr  = usb_types::BTABLE_ADDRESS::EP4_ADDR_TX as usize;
+        },
+        // Configures Endpoint 5 buffers and registers
+        usb_types::Endpoints::EP5 =>
+        {
+            btable_rx_count = usb_types::BTABLE_ADDRESS::EP5_COUNT_RX as usize;
+            btable_rx_addr  = usb_types::BTABLE_ADDRESS::EP5_ADDR_RX as usize;
+            btable_tx_count = usb_types::BTABLE_ADDRESS::EP5_COUNT_TX as usize;
+            btable_tx_addr  = usb_types::BTABLE_ADDRESS::EP5_ADDR_TX as usize;
+        },
+        // Configures Endpoint 6 buffers and registers
+        usb_types::Endpoints::EP6 =>
+        {
+            btable_rx_count = usb_types::BTABLE_ADDRESS::EP6_COUNT_RX as usize;
+            btable_rx_addr  = usb_types::BTABLE_ADDRESS::EP6_ADDR_RX as usize;
+            btable_tx_count = usb_types::BTABLE_ADDRESS::EP6_COUNT_TX as usize;
+            btable_tx_addr  = usb_types::BTABLE_ADDRESS::EP6_ADDR_TX as usize;
+        },
+        // Configures Endpoint 7 buffers and registers
+        usb_types::Endpoints::EP7 =>
+        {
+            btable_rx_count = usb_types::BTABLE_ADDRESS::EP7_COUNT_RX as usize;
+            btable_rx_addr  = usb_types::BTABLE_ADDRESS::EP7_ADDR_RX as usize;
+            btable_tx_count = usb_types::BTABLE_ADDRESS::EP7_COUNT_TX as usize;
+            btable_tx_addr  = usb_types::BTABLE_ADDRESS::EP7_ADDR_TX as usize;
+        }
     }
 
-    // === Buffer Description Table (BTABLE) entries for EP0 ===
     unsafe
     {
         // === Configure EP0R Register ===
         let pma = usb_types::PMA_BASE as *mut u16;
-        core::ptr::write_volatile(pma.add(btable_rx_count), 0x8400);      // COUNT_RX
-        core::ptr::write_volatile(pma.add(btable_rx_addr), rx_addr); // ADDR_RX
-        core::ptr::write_volatile(pma.add(btable_tx_count), 0);      // COUNT_TX
-        core::ptr::write_volatile(pma.add(btable_tx_addr), tx_addr); // ADDR_TX
+        // COUNT_RX
+        core::ptr::write_volatile(pma.add(btable_rx_count), ep.rx_count);
+        // ADDR_RX
+        core::ptr::write_volatile(pma.add(btable_rx_addr), ep.rx_addr);
+        // COUNT_TX
+        core::ptr::write_volatile(pma.add(btable_tx_count), 0);
+        // ADDR_TX
+        core::ptr::write_volatile(pma.add(btable_tx_addr), ep.tx_addr);
         
         // === Clean PMA ===
         let dummy = [0u8; 64];
-        pma_write(rx_addr, &dummy);
-        pma_write(tx_addr, &dummy);
+        pma_write(ep.rx_addr, &dummy);
+        pma_write(ep.tx_addr, &dummy);
         
         // Bits [3:0]  = EA[3:0]  → Endpoint Address = 0
         // Bits [8:9]  = EP_TYPE  → 01 = Control
         let epr = get_ep_register(0);
-        *epr ^= (ep_type as u16) << (usb_types::USBEPnR::EP_TYPE as u8) | (usb_types::STATTX_Status::NAK as u16) << (usb_types::USBEPnR::STAT_TX as u8) | (usb_types::STATTX_Status::VALID as u16) << (usb_types::USBEPnR::STAT_RX as u8);
+        *epr ^= (ep_type as u16) << (usb_types::USBEPnR::EP_TYPE as u8) |
+                (usb_types::STATTX_Status::NAK as u16) << (usb_types::USBEPnR::STAT_TX as u8) |
+                (usb_types::STATTX_Status::VALID as u16) << (usb_types::USBEPnR::STAT_RX as u8);
     }
 
     // // Enable USB peripheral
