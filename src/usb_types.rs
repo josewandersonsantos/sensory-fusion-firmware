@@ -126,24 +126,45 @@ pub enum STATTX_Status
 #[repr(u8)]
 pub enum BTABLE_ADDRESS
 {
-    EP0_ADDR_TX = 0x00,   // Endpoint 0 Address of the TX buffer for the endpoint
+    EP0_ADDR_TX  = 0x00,   // Endpoint 0 Address of the TX buffer for the endpoint
     EP0_COUNT_TX = 0x02,  // Endpoint 0 Number of bytes to transmit (for IN endpoints)
-    EP0_ADDR_RX = 0x04,   // Endpoint 0 Address of the RX buffer for the endpoint
+    EP0_ADDR_RX  = 0x04,   // Endpoint 0 Address of the RX buffer for the endpoint
     EP0_COUNT_RX = 0x06,  // Endpoint 0 Number of bytes received (for OUT endpoints)
     
-    EP1_ADDR_TX = 0x08,   // Endpoint 1 Address of the TX buffer for the endpoint
+    EP1_ADDR_TX  = 0x08,   // Endpoint 1 Address of the TX buffer for the endpoint
     EP1_COUNT_TX = 0x0A,  // Endpoint 1 Number of bytes to transmit (for IN endpoints)
-    EP1_ADDR_RX = 0x0C,   // Endpoint 1 Address of the RX buffer for the endpoint
+    EP1_ADDR_RX  = 0x0C,   // Endpoint 1 Address of the RX buffer for the endpoint
     EP1_COUNT_RX = 0x0E,  // Endpoint 1 Number of bytes received (for OUT endpoints)
 
-    EP2_ADDR_TX = 0x10,   // Endpoint 2 Address of the TX buffer for the endpoint
+    EP2_ADDR_TX  = 0x10,   // Endpoint 2 Address of the TX buffer for the endpoint
     EP2_COUNT_TX = 0x12,  // Endpoint 2 Number of bytes to transmit (for IN endpoints)
-    EP2_ADDR_RX = 0x14,   // Endpoint 2 Address of the RX buffer for the endpoint
+    EP2_ADDR_RX  = 0x14,   // Endpoint 2 Address of the RX buffer for the endpoint
     EP2_COUNT_RX = 0x16,  // Endpoint 2 Number of bytes received (for OUT endpoints)
     
-    /*
-     *
-     */
+    EP3_ADDR_TX  = 0x18,   // Endpoint 3 Address of the TX buffer for the endpoint
+    EP3_COUNT_TX = 0x1A,  // Endpoint 3 Number of bytes to transmit (for IN endpoints)
+    EP3_ADDR_RX  = 0x1C,   // Endpoint 3 Address of the RX buffer for the endpoint
+    EP3_COUNT_RX = 0x1E,  // Endpoint 3 Number of bytes received (for OUT endpoints)
+    
+    EP4_ADDR_TX  = 0x20,   // Endpoint 4 Address of the TX buffer for the endpoint
+    EP4_COUNT_TX = 0x22,  // Endpoint 4 Number of bytes to transmit (for IN endpoints)
+    EP4_ADDR_RX  = 0x24,   // Endpoint 4 Address of the RX buffer for the endpoint
+    EP4_COUNT_RX = 0x26,  // Endpoint 4 Number of bytes received (for OUT endpoints)
+    
+    EP5_ADDR_TX  = 0x28,   // Endpoint 5 Address of the TX buffer for the endpoint
+    EP5_COUNT_TX = 0x2A,  // Endpoint 5 Number of bytes to transmit (for IN endpoints)
+    EP5_ADDR_RX  = 0x2C,   // Endpoint 5 Address of the RX buffer for the endpoint
+    EP5_COUNT_RX = 0x2E,  // Endpoint 5 Number of bytes received (for OUT endpoints)
+    
+    EP6_ADDR_TX  = 0x30,   // Endpoint 6 Address of the TX buffer for the endpoint
+    EP6_COUNT_TX = 0x32,  // Endpoint 6 Number of bytes to transmit (for IN endpoints)
+    EP6_ADDR_RX  = 0x34,   // Endpoint 6 Address of the RX buffer for the endpoint
+    EP6_COUNT_RX = 0x36,  // Endpoint 6 Number of bytes received (for OUT endpoints)
+    
+    EP7_ADDR_TX  = 0x38,   // Endpoint 7 Address of the TX buffer for the endpoint
+    EP7_COUNT_TX = 0x3A,  // Endpoint 7 Number of bytes to transmit (for IN endpoints)
+    EP7_ADDR_RX  = 0x3C,   // Endpoint 7 Address of the RX buffer for the endpoint
+    EP7_COUNT_RX = 0x3E,  // Endpoint 7 Number of bytes received (for OUT endpoints)
 }
 
 #[derive(Clone, Copy)]
@@ -153,6 +174,17 @@ pub enum EndpointType
     CONTROL     = 1,
     ISOCHRONOUS = 2,
     INTERRUPT   = 3,
+}
+
+#[derive(Clone, Copy)]
+pub struct Descriptors
+{
+    pub device_descriptor: [u8; 18],
+    pub config_descriptor: [u8; 25],
+    pub string0: [u8; 4],
+    pub string1: [u8; 10],
+    pub string2: [u8; 16],
+    pub string3: [u8; 10],
 }
 
 #[repr(C)]
