@@ -180,7 +180,7 @@ pub enum EndpointType
 pub struct Descriptors
 {
     pub device_descriptor: [u8; 18],
-    pub config_descriptor: [u8; 25],
+    pub config_descriptor: [u8; 67],
     pub string0: [u8; 4],
     pub string1: [u8; 10],
     pub string2: [u8; 16],
