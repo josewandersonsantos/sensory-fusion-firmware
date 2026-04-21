@@ -94,7 +94,7 @@ fn handle_set_configuration(epn: usize)
     usb_driver::set_stat_tx_valid(epn);
 }
 
-pub fn handle_setup(ep: &mut usb_endpoint::Endpoint, descriptors: &usb_types::Descriptors)
+pub fn handle_setup(ep: &mut usb_endpoint::Endpoint, descriptors: &usb_types::Descriptors) -> u8
 {
     let mut setup = [0u8; 8];
     // Read 8-byte SETUP packet from PMA
@@ -119,26 +119,31 @@ pub fn handle_setup(ep: &mut usb_endpoint::Endpoint, descriptors: &usb_types::De
         // GET_STATUS
         0 => 
         {
-            handle_get_status(ep, wlength)
+            handle_get_status(ep, wlength);
+            return 0;
             // handle_get_descriptor 1, 18)
         },
         5 => 
         {
-            handle_set_address(ep, wvalue)
+            handle_set_address(ep, wvalue);
+            return 0;
         },
         // GET_DESCRIPTOR
         6 => 
         {
-            handle_get_descriptor(ep, descriptors, wvalue, wlength)
+            handle_get_descriptor(ep, descriptors, wvalue, wlength);
+            return 0;
         },
         // SET_CONFIGURATION
         9 => 
         {
-            handle_set_configuration(ep.number as usize)
+            handle_set_configuration(ep.number as usize);
+            return 0;
         },
         _ =>
         {
-            usb_driver::stall_ep(ep.number as usize);
+            // Indicate setup not handled, so class-specific handler can try to process it
+            return 1;
         }
     }
 }
