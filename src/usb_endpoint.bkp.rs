@@ -379,14 +379,14 @@ fn send_next_packet(epn: usize, addr_tx: u16, len: usize, pos: &mut usize, data:
     pma_write(addr_tx, &data[*pos..*pos + chunk]);
     *pos += chunk;
     // Update TX count and set TX status to VALID
-    write_count_tx(epn, chunk as u16);
+    write_tx_count(epn, chunk as u16);
     //set_stat_rx_nak(epn);
     for _ in 0..1000 { core::hint::spin_loop(); }
     set_stat_tx_valid(epn);
 }
 
 /// Writes the TX byte count for Endpoint 0 into PMA
-fn write_count_tx(epn: usize, count: u16)
+fn write_tx_count(epn: usize, count: u16)
 {
     unsafe
     {
@@ -414,7 +414,7 @@ fn handle_set_address(epn: usize, wValue: u16)
         // Store the new address temporarily in the endpoint handler struct
         ENDPOINTS_HANDLERS[epn].address = new_address;
         
-        write_count_tx(epn, 0); // ZLP
+        write_tx_count(epn, 0); // ZLP
         set_stat_tx_valid(epn);
     }
 }
@@ -457,7 +457,7 @@ fn handle_set_configuration(epn: usize)
      */
 
     // responde ZLP
-    write_count_tx(0, 0);
+    write_tx_count(0, 0);
     set_stat_tx_valid(epn);
 }
 
