@@ -182,11 +182,11 @@ pub fn pma_read(addr: u16, buffer: &mut [u8], len: usize)
     }
 }
 
-pub fn pma_write(addr: u16, buffer: &[u8])
+pub fn pma_write(addr: u16, buffer: &[u8], len: usize)
 {
     unsafe
     {
-        let n_bytes = (buffer.len() + 1) >> 1;
+        let n_bytes = (len + 1) >> 1;
         let mut pma = usb_types::PMA_BASE as *mut u16;
         pma = pma.add(addr as usize);
 
@@ -206,8 +206,29 @@ pub fn pma_write(addr: u16, buffer: &[u8])
     }
 }
 
+pub fn read_rx_count(epn: usize) -> usize
+{
+    unsafe
+    {
+        let pma = usb_types::PMA_BASE as *const u16;
+        let addr = match epn
+        {
+            0 => pma.add(usb_types::BTABLE_ADDRESS::EP0_COUNT_RX as usize) as *const u16,
+            1 => pma.add(usb_types::BTABLE_ADDRESS::EP1_COUNT_RX as usize) as *const u16,
+            2 => pma.add(usb_types::BTABLE_ADDRESS::EP2_COUNT_RX as usize) as *const u16,
+            3 => pma.add(usb_types::BTABLE_ADDRESS::EP3_COUNT_RX as usize) as *const u16,
+            4 => pma.add(usb_types::BTABLE_ADDRESS::EP4_COUNT_RX as usize) as *mut u16,
+            5 => pma.add(usb_types::BTABLE_ADDRESS::EP5_COUNT_RX as usize) as *mut u16,
+            6 => pma.add(usb_types::BTABLE_ADDRESS::EP6_COUNT_RX as usize) as *mut u16,
+            7 => pma.add(usb_types::BTABLE_ADDRESS::EP7_COUNT_RX as usize) as *mut u16,
+            _ => return 0
+        };
+        (core::ptr::read_volatile(addr) & 0x03FF) as usize
+    }
+}
+
 /// Writes the TX byte count for Endpoint 0 into PMA
-pub fn write_count_tx(epn: usize, count: u16)
+pub fn write_tx_count(epn: usize, count: u16)
 {
     unsafe
     {
@@ -219,6 +240,10 @@ pub fn write_count_tx(epn: usize, count: u16)
             1 => pma.add(usb_types::BTABLE_ADDRESS::EP1_COUNT_TX as usize) as *mut u16,
             2 => pma.add(usb_types::BTABLE_ADDRESS::EP2_COUNT_TX as usize) as *mut u16,
             3 => pma.add(usb_types::BTABLE_ADDRESS::EP3_COUNT_TX as usize) as *mut u16,
+            4 => pma.add(usb_types::BTABLE_ADDRESS::EP4_COUNT_TX as usize) as *mut u16,
+            5 => pma.add(usb_types::BTABLE_ADDRESS::EP5_COUNT_TX as usize) as *mut u16,
+            6 => pma.add(usb_types::BTABLE_ADDRESS::EP6_COUNT_TX as usize) as *mut u16,
+            7 => pma.add(usb_types::BTABLE_ADDRESS::EP7_COUNT_TX as usize) as *mut u16,
             _ => return
         };
         core::ptr::write_volatile(addr, count & 0x03FF);
@@ -235,10 +260,10 @@ pub fn send_next_packet(epn: usize, addr_tx: u16, len: usize, pos: &mut usize, d
     };
     
     // Copy data to PMA
-    pma_write(addr_tx, &data[*pos..*pos + chunk]);
+    pma_write(addr_tx, &data[*pos..*pos + chunk], chunk);
     *pos += chunk;
     // Update TX count and set TX status to VALID
-    write_count_tx(epn, chunk as u16);
+    write_tx_count(epn, chunk as u16);
     //set_stat_rx_nak(epn);
     for _ in 0..1000 { core::hint::spin_loop(); }
     set_stat_tx_valid(epn);
@@ -334,8 +359,8 @@ pub fn configure_ep(ep: &mut usb_endpoint::Endpoint, ep_type: usb_types::Endpoin
         
         // === Clean PMA ===
         let dummy = [0u8; 64];
-        pma_write(ep.rx_addr, &dummy);
-        pma_write(ep.tx_addr, &dummy);
+        pma_write(ep.rx_addr, &dummy, 64);
+        pma_write(ep.tx_addr, &dummy, 64);
         
         // Bits [3:0]  = EA[3:0]  → Endpoint Address = 0
         // Bits [8:9]  = EP_TYPE  → 01 = Control
