@@ -10,6 +10,82 @@ use crate::usb_driver;
 use crate::usb_control;
 use crate::usb_endpoint;
 
+/*
+const DEVICE_DESCRIPTOR: [u8; 18] =
+[
+    0x12,         // bLength
+    1,            // bDescriptorType = DEVICE
+    0x00, 0x02,   // bcdUSB = 2.00
+    0x00,         // bDeviceClass
+    0x00,         // bDeviceSubClass
+    0x00,         // bDeviceProtocol
+    0x40,         // bMaxPacketSize0 = 64 bytes
+    // 0x34, 0x12,   // idVendor  (0x1234)
+    0x83, 0x04,   // idVendor  (0x0483 is STMicroelectronics' VID for testing)
+    0x78, 0x56,   // idProduct (0x5678)
+    0x00, 0x01,   // bcdDevice
+    0x01,         // iManufacturer
+    0x2,          // iProduct
+    0x3,          // iSerialNumber
+    0x1           // bNumConfigurations
+];
+
+const CONFIG_DESCRIPTOR: [u8; 25] =
+[
+    // CONFIG
+    0x09, 0x02,
+    0x19, 0x00, // total length = 25
+    0x01,       // 1 interface
+    0x01,
+    0x00,
+    0x80,
+    0x32,
+
+    // INTERFACE
+    0x09, 0x04,
+    0x00, // interface 0
+    0x00,
+    0x01, // 1 endpoint
+    0xFF, // vendor specific
+    0x00,
+    0x00,
+    0x00,
+
+    // ENDPOINT IN
+    0x07, 0x05,
+    0x81, // IN EP1
+    0x02, // bulk
+    0x40, 0x00,
+    0x00
+];
+
+const CDC_STRING0: [u8; 4] =
+[
+    0x04, 0x03,
+    0x09, 0x04,
+];
+
+const CDC_STRING1: [u8; 10] =
+[
+    10, 0x03,
+    b'A', 0, b'C', 0, b'M', 0, b'E', 0
+];
+
+const CDC_STRING2: [u8; 16] =
+[
+    16, 0x03,
+    b'U',0, b'S',0, b'B',0, b' ',0,
+    b'D',0, b'e',0, b'v',0
+];
+
+const CDC_STRING3: [u8; 10] =
+[
+    10, 0x03,
+    b'1',0, b'2',0, b'3',0, b'4',0
+];
+*/
+
+// /*
 const DEVICE_DESCRIPTOR: [u8; 18] =
 [
     0x12,         // bLength
@@ -118,18 +194,20 @@ const CDC_STRING3: [u8; 10] =
     10, 0x03,
     b'1',0, b'2',0, b'3',0, b'4',0
 ];
+// */
 
 const STRING_DESCRIPTORS: [&'static [u8]; 4] =
 [
     &CDC_STRING0, &CDC_STRING1, &CDC_STRING2, &CDC_STRING3,
 ];
 
-static mut LINE_CODING: [u8; 7] =
+static mut LINE_CODING: [u8; 8] =
 [
     0x00, 0xC2, 0x01, 0x00, // 115200
     0x00, // stop bits
     0x00, // parity
-    0x08  // data bits
+    0x08,  // data bits
+    0x00
 ];
 
 const DESCRIPTORS: usb_types::Descriptors = usb_types::Descriptors
@@ -168,7 +246,7 @@ static mut EP1_INTERRUPT_IN: usb_endpoint::Endpoint = usb_endpoint::Endpoint
     data_buffer: [0; 128],
     length: 0,
     position: 0,
-    tx_addr: 0x40,  // ADDR_TX field in BTABLE
+    tx_addr: 0xC0,  // ADDR_TX field in BTABLE
     rx_addr: 0,     // Not used for IN endpoint
     tx_count: 0,          // COUNT_TX field in BTABLE
     rx_count: 0,          // Not used for IN endpoint
@@ -185,7 +263,7 @@ static mut EP2_BULK_OUT: usb_endpoint::Endpoint = usb_endpoint::Endpoint
     length: 0,
     position: 0,
     tx_addr: 0,     // Not used for OUT endpoint
-    rx_addr: 0x80,  // ADDR_RX field in BTABLE
+    rx_addr: 0x100,  // ADDR_RX field in BTABLE
     tx_count: 0,          // Not used for OUT endpoint
     rx_count: 0,          // COUNT_RX field in BTABLE (set by hardware)
 };
@@ -200,8 +278,8 @@ static mut EP3_BULK_IN: usb_endpoint::Endpoint = usb_endpoint::Endpoint
     data_buffer: [0; 128],
     length: 0,
     position: 0,
-    tx_addr: 0,     // Not used for OUT endpoint
-    rx_addr: 0x80,  // ADDR_RX field in BTABLE
+    tx_addr: 0x140,     // Not used for OUT endpoint
+    rx_addr: 0,  // ADDR_RX field in BTABLE
     tx_count: 0,          // Not used for OUT endpoint
     rx_count: 0,          // COUNT_RX field in BTABLE (set by hardware)
 };
