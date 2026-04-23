@@ -86,25 +86,26 @@ const CDC_STRING3: [u8; 10] =
 */
 
 // /*
+// ==================== DEVICE DESCRIPTOR ====================
 const DEVICE_DESCRIPTOR: [u8; 18] =
 [
     0x12,         // bLength
-    1,            // bDescriptorType = DEVICE
+    0x01,         // bDescriptorType = DEVICE
     0x00, 0x02,   // bcdUSB = 2.00
-    0x02,         // bDeviceClass (CDC)
+    0x02,         // bDeviceClass = CDC
     0x00,         // bDeviceSubClass
     0x00,         // bDeviceProtocol
-    0x40,         // bMaxPacketSize0 = 64 bytes
-    // 0x34, 0x12,   // idVendor  (0x1234)
-    0x83, 0x04,   // idVendor  (0x0483 is STMicroelectronics' VID for testing)
-    0x78, 0x56,   // idProduct (0x5678)
-    0x00, 0x01,   // bcdDevice
+    0x40,         // bMaxPacketSize0 = 64
+    0x83, 0x04,   // idVendor  = 0x0483 (ST)
+    0x78, 0x56,   // idProduct = 0x5678
+    0x00, 0x01,   // bcdDevice = 1.00
     0x01,         // iManufacturer
-    0x2,          // iProduct
-    0x3,          // iSerialNumber
-    0x1           // bNumConfigurations
+    0x02,         // iProduct
+    0x03,         // iSerialNumber
+    0x01          // bNumConfigurations
 ];
 
+// ==================== CONFIGURATION DESCRIPTOR ====================
 const CONFIG_DESCRIPTOR: [u8; 67] =
 [
     // CONFIG
