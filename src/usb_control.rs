@@ -131,11 +131,11 @@ pub fn handle_setup(ep: &mut usb_endpoint::Endpoint, descriptors: &usb_types::De
         {
             handle_get_descriptor(ep, descriptors, wvalue, wlength);
         },
-        // SET_CONFIGURATION
-        9 => 
-        {
-            handle_set_configuration(ep.number as usize);
-        },
+        // // SET_CONFIGURATION
+        // 9 => 
+        // {
+        //     handle_set_configuration(ep.number as usize);
+        // },
         _ =>
         {
             // Indicate setup not handled, so class-specific handler can try to process it
