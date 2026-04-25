@@ -454,22 +454,64 @@ fn handle_class_request(ep: &mut usb_endpoint::Endpoint, setup: [u8; 8])
     match brequest
     {
         // =========================
+        // CLEAR_FEATURE (HOST → DEVICE)
+        // =========================
+        0x01 =>
+        {
+            if wvalue == 0x00 // ENDPOINT_HALT
+            {
+                let ep_addr = windex as u8;
+                let ep_num = ep_addr & 0x0F;
+                let is_in = (ep_addr & 0x80) != 0;
+
+                if is_in
+                {
+                    usb_driver::set_stat_tx_nak(ep_num as usize);
+                }
+                else
+                {
+                    usb_driver::set_stat_rx_valid(ep_num as usize);
+                }
+            }
+
+            usb_driver::send_zero_length_packet(0);
+        }
+        // =========================
+        // SET_CONFIGURATION (HOST → DEVICE)
+        // =========================
+        0x09 =>
+        {
+            // configure_epns();
+            // usb_driver::set_stat_tx_nak(0);
+            usb_driver::send_zero_length_packet(0);
+        }
+        // =========================
         // SET_LINE_CODING (HOST → DEVICE)
         // =========================
         0x20 =>
         {
-            // host will send 7 bytes later
-            ep.state = usb_endpoint::EndpointState::DataOut;
+            if wlength == 7
+            {
+                ep.state = usb_endpoint::EndpointState::DataOut;
+                // Set RX to get 7 bytes for line coding
+                usb_driver::set_stat_rx_valid(0);
+                usb_driver::send_zero_length_packet(0);
+            }
+            else
+            {
+                usb_driver::stall_ep(0);
+            }
         }
-
         // =========================
         // GET_LINE_CODING (DEVICE → HOST)
         // =========================
         0x21 =>
         {
+            //usb_driver::send_zero_length_packet(0);
+
             unsafe
             {
-                ep.data_buffer[..7].copy_from_slice(&LINE_CODING);
+                ep.data_buffer[..8].copy_from_slice(&LINE_CODING);
             }
 
             ep.length = 7;
@@ -478,17 +520,15 @@ fn handle_class_request(ep: &mut usb_endpoint::Endpoint, setup: [u8; 8])
 
             usb_driver::send_next_packet(ep.number as usize, ep.tx_addr, ep.length, &mut ep.position, &ep.data_buffer);
         }
-
         // =========================
         // SET_CONTROL_LINE_STATE
         // =========================
         0x22 =>
         {
             // só precisa responder ZLP
-            usb_driver::write_count_tx(ep.number as usize, 0);
-            usb_driver::set_stat_tx_valid(ep.number as usize);
+            ep.state = usb_endpoint::EndpointState::StatusIn;
+            usb_driver::send_zero_length_packet(ep.number as usize);
         }
-
         _ =>
         {
             usb_driver::stall_ep(ep.number as usize);
