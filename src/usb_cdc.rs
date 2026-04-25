@@ -410,15 +410,17 @@ pub fn handler_endpoint(epn: usize)
             usb_driver::clear_ctr_rx(epn);
             if epv & (1 << usb_types::USBEPnR::SETUP as u16) != 0 // SETUP bit set
             {
-                if usb_control::handle_setup(ep, &DESCRIPTORS) == 1
+                // Return 1 to indicate setup not handled, so class-specific handler can try to process it
+                if let Some(setup) = usb_control::handle_setup(ep, &DESCRIPTORS)
                 {
-                    handle_class_request(ep);
+                    handle_class_request(ep, setup);
                 }
             }
             else
             {
                 // Regular OUT data packet
-                usb_control::handle_out(ep);
+                // usb_control::handle_out(ep);
+                handle_out(ep);
             }
         }
         
@@ -435,7 +437,7 @@ pub fn handler_endpoint(epn: usize)
 
 }
 
-fn handle_class_request(ep: &mut usb_endpoint::Endpoint)
+fn handle_class_request(ep: &mut usb_endpoint::Endpoint, setup: [u8; 8])
 {
     let mut setup = [0u8; 8];
 
