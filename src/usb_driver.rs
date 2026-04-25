@@ -270,6 +270,21 @@ pub fn send_next_packet(epn: usize, addr_tx: u16, len: usize, pos: &mut usize, d
     set_stat_tx_valid(epn);
 }
 
+pub fn set_address(addr: u8)
+{
+    unsafe
+    {
+        let usb_daddr = mcu::USB_DADDR as *mut u16;
+        core::ptr::write_volatile(usb_daddr, (addr as u16) | (1 << usb_types::USBDADDR::EF as u8));
+    }
+}
+
+pub fn send_zero_length_packet(epn: usize)
+{
+    write_tx_count(epn, 0);
+    set_stat_tx_valid(epn);
+}
+
 pub fn configure_ep(ep: &mut usb_endpoint::Endpoint, ep_type: usb_types::EndpointType)
 {
     let mut btable_rx_count: usize = 0;
@@ -366,6 +381,7 @@ pub fn configure_ep(ep: &mut usb_endpoint::Endpoint, ep_type: usb_types::Endpoin
         // Bits [3:0]  = EA[3:0]  → Endpoint Address = 0
         // Bits [8:9]  = EP_TYPE  → 01 = Control
         let epr = get_ep_register(ep.number as usize);
+        // *epr ^= (ep_type as u16) << (usb_types::USBEPnR::EP_TYPE as u8);
         *epr ^= (ep_type as u16) << (usb_types::USBEPnR::EP_TYPE as u8) |
                 (usb_types::STATTX_Status::NAK as u16) << (usb_types::USBEPnR::STAT_TX as u8) |
                 (usb_types::STATTX_Status::VALID as u16) << (usb_types::USBEPnR::STAT_RX as u8);
