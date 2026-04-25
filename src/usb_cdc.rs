@@ -359,29 +359,32 @@ pub fn handler_endpoint_interrupt()
 
 pub fn handler_reset(epn: usize)
 {
-    unsafe 
+    configure_epns();
+    unsafe
     {
-        match epn
-        {
-            0 =>
-            {
-                usb_driver::configure_ep(&mut EP0_CONTROL, EP0_CONTROL.ep_type);
-            }
-            1 =>
-            {
-                usb_driver::configure_ep(&mut EP1_INTERRUPT_IN, EP1_INTERRUPT_IN.ep_type);
-            }
-            2 =>
-            {
-                usb_driver::configure_ep(&mut EP2_BULK_OUT, EP2_BULK_OUT.ep_type);
-            }
-            3 =>
-            {
-                usb_driver::configure_ep(&mut EP3_BULK_IN, EP3_BULK_IN.ep_type);
-            }
-            _=> {return;}
-        }
+        usb_driver::configure_ep(&mut EP0_CONTROL, usb_types::EndpointType::CONTROL);
+        // match epn
+        // {
+        //     0 =>
+        //     {
+        //         usb_driver::configure_ep(&mut EP0_CONTROL, EP0_CONTROL.ep_type);
+        //     }
+        //     1 =>
+        //     {
+        //         usb_driver::configure_ep(&mut EP1_INTERRUPT_IN, EP1_INTERRUPT_IN.ep_type);
+        //     }
+        //     2 =>
+        //     {
+        //         usb_driver::configure_ep(&mut EP2_BULK_OUT, EP2_BULK_OUT.ep_type);
+        //     }
+        //     3 =>
+        //     {
+        //         usb_driver::configure_ep(&mut EP3_BULK_IN, EP3_BULK_IN.ep_type);
+        //     }
+        //     _=> {return;}
+        // }
     }
+    usb_driver::set_address(0); // Ensure device address is reset to 0
 }
 /// Main handler for Endpoint 0 (Control Endpoint)
 pub fn handler_endpoint(epn: usize)
