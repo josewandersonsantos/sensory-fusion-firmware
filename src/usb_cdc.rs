@@ -32,58 +32,78 @@ const DEVICE_DESCRIPTOR: [u8; 18] =
 
 const CONFIG_DESCRIPTOR: [u8; 25] =
 [
-    // CONFIG
-    0x09, 0x02,
-    0x19, 0x00, // total length = 25
-    0x01,       // 1 interface
-    0x01,
-    0x00,
-    0x80,
-    0x32,
+    // ================= CONFIGURATION DESCRIPTOR =================
+    0x09,       // bLength (size of this descriptor in bytes)
+    0x02,       // bDescriptorType (CONFIGURATION)
 
-    // INTERFACE
-    0x09, 0x04,
-    0x00, // interface 0
-    0x00,
-    0x01, // 1 endpoint
-    0xFF, // vendor specific
-    0x00,
-    0x00,
-    0x00,
+    0x19, 0x00, // wTotalLength (total size of all descriptors = 25 bytes)
+    0x01,       // bNumInterfaces (only 1 interface)
+    0x01,       // bConfigurationValue (ID of this configuration)
+    0x00,       // iConfiguration (no string descriptor)
 
-    // ENDPOINT IN
-    0x07, 0x05,
-    0x81, // IN EP1
-    0x02, // bulk
-    0x40, 0x00,
-    0x00
+    0x80,       // bmAttributes:
+                //  bit7 = 1 (required)
+                //  bit6 = 0 (bus-powered device)
+                //  bit5 = 0 (no remote wakeup support)
+
+    0x32,       // bMaxPower (100 mA → value * 2 mA)
+
+    // ================= INTERFACE DESCRIPTOR =================
+    0x09,       // bLength
+    0x04,       // bDescriptorType (INTERFACE)
+
+    0x00,       // bInterfaceNumber (Interface 0)
+    0x00,       // bAlternateSetting
+
+    0x01,       // bNumEndpoints (1 endpoint used)
+
+    0xFF,       // bInterfaceClass (Vendor-specific class)
+    0x00,       // bInterfaceSubClass
+    0x00,       // bInterfaceProtocol
+
+    0x00,       // iInterface (no string descriptor)
+
+    // ================= ENDPOINT DESCRIPTOR =================
+    0x07,       // bLength
+    0x05,       // bDescriptorType (ENDPOINT)
+
+    0x81,       // bEndpointAddress:
+                //  bit7 = 1 → IN direction (device → host)
+                //  bits3..0 = endpoint number 1
+
+    0x02,       // bmAttributes (Bulk transfer type)
+
+    0x40, 0x00, // wMaxPacketSize (64 bytes)
+
+    0x00        // bInterval (ignored for bulk endpoints)
 ];
+*/
 
-const CDC_STRING0: [u8; 4] =
+const CDC_STRING0_LANG: [u8; 4] =
 [
     0x04, 0x03,
     0x09, 0x04,
 ];
 
-const CDC_STRING1: [u8; 10] =
+const CDC_STRING1_MANUF: [u8; 10] =
 [
     10, 0x03,
     b'A', 0, b'C', 0, b'M', 0, b'E', 0
 ];
 
-const CDC_STRING2: [u8; 16] =
+const CDC_STRING2_PRODUCT: [u8; 16] =
 [
     16, 0x03,
     b'U',0, b'S',0, b'B',0, b' ',0,
     b'D',0, b'e',0, b'v',0
 ];
 
-const CDC_STRING3: [u8; 10] =
+const CDC_STRING3_SERIAL: [u8; 10] =
 [
     10, 0x03,
     b'1',0, b'2',0, b'3',0, b'4',0
 ];
-*/
+
 
 // /*
 // ==================== DEVICE DESCRIPTOR ====================
@@ -98,109 +118,147 @@ const DEVICE_DESCRIPTOR: [u8; 18] =
     0x40,         // bMaxPacketSize0 = 64
     0x83, 0x04,   // idVendor  = 0x0483 (ST)
     0x78, 0x56,   // idProduct = 0x5678
-    0x00, 0x01,   // bcdDevice = 1.00
-    0x01,         // iManufacturer
-    0x02,         // iProduct
-    0x03,         // iSerialNumber
+    0x00, 0x02,   // bcdDevice = 1.00
+    0x01,         // Index of string descriptor describing manufacturer (iManufacturer)
+    0x02,         // Index of string descriptor describing product (iProduct)
+    0x03,         // Index of string descriptor describing device serial number (iSerialNumber)
     0x01          // bNumConfigurations
 ];
 
 // ==================== CONFIGURATION DESCRIPTOR ====================
 const CONFIG_DESCRIPTOR: [u8; 67] =
 [
-    // CONFIG
-    0x09, 0x02,
-    0x43, 0x00, // total length = 67
-    0x02,       // 2 interfaces
-    0x01,
-    0x00,
-    0x80,
-    0x32,
+    // ================= CONFIGURATION DESCRIPTOR =================
+    0x09,       // bLength (size of this descriptor in bytes)
+    0x02,       // bDescriptorType (CONFIGURATION)
 
-    // INTERFACE 0
-    0x09, 0x04,
-    0x00, // interface 0
-    0x00,
-    0x01, // 1 endpoint
-    0x02, // CDC
-    0x02, // ACM
-    0x01,
-    0x00,
+    0x43, 0x00, // wTotalLength (total size of all descriptors = 67 bytes)
+    0x02,       // bNumInterfaces (2 interfaces: CDC Control + CDC Data)
+    0x01,       // bConfigurationValue (ID of this configuration)
+    0x00,       // iConfiguration (no string descriptor)
+    0xC0,       // bmAttributes:
+                //  bit7 = 1 (required)
+                //  bit6 = 0 (bus-powered)
+                //  bit5 = 0 (no remote wakeup)
+    0x32,       // bMaxPower (100 mA → value * 2 mA)
 
-    // HEADER
-    0x05, 0x24, 0x00, 0x10, 0x01,
+    // ================= INTERFACE 0 (CDC CONTROL) =================
+    0x09,       // bLength
+    0x04,       // bDescriptorType (INTERFACE)
 
-    // CALL MANAGEMENT
-    0x05, 0x24, 0x01, 0x03, 0x01,
+    0x00,       // bInterfaceNumber (Interface 0)
+    0x00,       // bAlternateSetting
+    0x01,       // bNumEndpoints (1 interrupt endpoint)
+    0x02,       // bInterfaceClass (Communications and CDC Control)
+    0x02,       // bInterfaceSubClass (Abstract Control Model - ACM)
+    0x01,       // bInterfaceProtocol (AT commands / V.250)
+    0x00,       // iInterface (no string)
 
-    // ACM
-    0x04, 0x24, 0x02, 0x02,
+    // -------- CDC HEADER FUNCTIONAL DESCRIPTOR --------
+    0x05,       // bFunctionLength
+    0x24,       // bDescriptorType (CS_INTERFACE)
+    0x00,       // bDescriptorSubType (Header)
+    0x10, 0x01, // bcdCDC (CDC spec version 1.10)
 
-    // UNION
-    0x05, 0x24, 0x06, 0x00, 0x01,
+    // -------- CDC CALL MANAGEMENT FUNCTIONAL DESCRIPTOR --------
+    0x05,       // bFunctionLength
+    0x24,       // bDescriptorType (CS_INTERFACE)
+    0x01,       // bDescriptorSubType (Call Management)
+    0x00,       // bmCapabilities:
+                //  bit1 = device handles call management
+                //  bit0 = uses data interface for call management
+    0x01,       // bDataInterface (Interface 1 is the data interface)
 
-    // ENDPOINT IN (CONTROL)
-    0x07, 0x05,
-    0x81, // IN EP1
-    0x03, // interrupt
-    0x08, 0x00,
-    0x10,
-    
-    // INTERFACE 1 DATA
-    0x09, 0x04,
-    0x01, // interface 1
-    0x00,
-    0x02, // 2 endpoints
-    0x0A, // DATA CLASS
-    0x00,
-    0x00,
-    0x00,
-    
-    // BULK OUT
-    0x07, 0x05,
-    0x02, // EP2 OUT
-    0x02, // BULK
-    0x40, 0x00,
-    0x00,
-    
-    // BULK IN
-    0x07, 0x05,
-    0x83, // EP3 IN
-    0x02,
-    0x40, 0x00,
-    0x00,
+    // -------- CDC ABSTRACT CONTROL MANAGEMENT (ACM) --------
+    0x04,       // bFunctionLength
+    0x24,       // bDescriptorType (CS_INTERFACE)
+    0x02,       // bDescriptorSubType (ACM)
+    0x02,       // bmCapabilities:
+                //  supports Set_Line_Coding, Get_Line_Coding, etc.
+
+    // -------- CDC UNION FUNCTIONAL DESCRIPTOR --------
+    0x05,       // bFunctionLength
+    0x24,       // bDescriptorType (CS_INTERFACE)
+    0x06,       // bDescriptorSubType (Union)
+    0x00,       // bControlInterface (Interface 0 = control)
+    0x01,       // bSubordinateInterface (Interface 1 = data)
+
+    // -------- ENDPOINT 1 (INTERRUPT IN - NOTIFICATION) --------
+    0x07,       // bLength
+    0x05,       // bDescriptorType (ENDPOINT)
+
+    0x81,       // bEndpointAddress:
+                //  bit7 = 1 (IN direction)
+                //  bits3..0 = endpoint number 1
+    0x03,       // bmAttributes (Interrupt transfer)
+    0x08, 0x00, // wMaxPacketSize (8 bytes)
+    0xFF,       // bInterval (polling interval = 16 ms)
+
+    // ================= INTERFACE 1 (CDC DATA) =================
+    0x09,       // bLength
+    0x04,       // bDescriptorType (INTERFACE)
+
+    0x01,       // bInterfaceNumber (Interface 1)
+    0x00,       // bAlternateSetting
+    0x02,       // bNumEndpoints (2 bulk endpoints)
+    0x0A,       // bInterfaceClass (CDC Data)
+    0x00,       // bInterfaceSubClass
+    0x00,       // bInterfaceProtocol
+    0x00,       // iInterface (no string)
+
+    // -------- ENDPOINT 2 (BULK OUT - HOST → DEVICE) --------
+    0x07,       // bLength
+    0x05,       // bDescriptorType (ENDPOINT)
+
+    0x02,       // bEndpointAddress:
+                //  bit7 = 0 (OUT direction)
+                //  endpoint number 2
+    0x02,       // bmAttributes (Bulk transfer)
+    0x40, 0x00, // wMaxPacketSize (64 bytes)
+    0x00,       // bInterval (ignored for bulk)
+
+    // -------- ENDPOINT 3 (BULK IN - DEVICE → HOST) --------
+    0x07,       // bLength
+    0x05,       // bDescriptorType (ENDPOINT)
+
+    0x83,       // bEndpointAddress:
+                //  bit7 = 1 (IN direction)
+                //  endpoint number 3
+    0x02,       // bmAttributes (Bulk transfer)
+    0x40, 0x00, // wMaxPacketSize (64 bytes)
+    0x00,       // bInterval (ignored for bulk)
 ];
 
-const CDC_STRING0: [u8; 4] =
-[
-    0x04, 0x03,
-    0x09, 0x04,
-];
-
-const CDC_STRING1: [u8; 10] =
-[
-    10, 0x03,
-    b'S', 0, b'T', 0, b'M', 0, b' ', 0
-];
-
-const CDC_STRING2: [u8; 16] =
-[
-    16, 0x03,
-    b'U',0, b'S',0, b'B',0, b' ',0,
-    b'D',0, b'e',0, b'v',0
-];
-
-const CDC_STRING3: [u8; 10] =
-[
-    10, 0x03,
-    b'1',0, b'2',0, b'3',0, b'4',0
-];
 // */
+
+/*
+// ==================== STRING DESCRIPTORS ====================
+const CDC_STRING0_LANG: [u8; 4] = [0x04, 0x03, 0x09, 0x04]; // Language ID: English (US)
+
+const CDC_STRING1_MANUF: [u8; 38] = [  // "STMicroelectronics"
+    38, 0x03,
+    b'S',0, b'T',0, b'M',0, b'i',0, b'c',0, b'r',0, b'o',0,
+    b'e',0, b'l',0, b'e',0, b'c',0, b't',0, b'r',0, b'o',0, b'n',0, b'i',0, b'c',0, b's',0
+];
+
+const CDC_STRING2_PRODUCT: [u8; 30] = [  // "USB CDC Device"
+    30, 0x03,
+    b'U',0, b'S',0, b'B',0, b' ',0,
+    b'C',0, b'D',0, b'C',0, b' ',0,
+    b'D',0, b'e',0, b'v',0, b'i',0, b'c',0, b'e',0
+];
+
+const CDC_STRING3_SERIAL: [u8; 18] = [  // "12345678"
+    18, 0x03,
+    b'1',0, b'2',0, b'3',0, b'4',0, b'5',0, b'6',0, b'7',0, b'8',0
+];
 
 const STRING_DESCRIPTORS: [&'static [u8]; 4] =
 [
-    &CDC_STRING0, &CDC_STRING1, &CDC_STRING2, &CDC_STRING3,
+    &CDC_STRING0_LANG, &CDC_STRING1_MANUF, &CDC_STRING2_PRODUCT, &CDC_STRING3_SERIAL,
 ];
+
+*/
 
 static mut LINE_CODING: [u8; 8] =
 [
@@ -215,10 +273,10 @@ const DESCRIPTORS: usb_types::Descriptors = usb_types::Descriptors
 {
     device_descriptor: DEVICE_DESCRIPTOR,
     config_descriptor: CONFIG_DESCRIPTOR,
-    string0: CDC_STRING0,
-    string1: CDC_STRING1,
-    string2: CDC_STRING2,
-    string3: CDC_STRING3,
+    string0: CDC_STRING0_LANG,
+    string1: CDC_STRING1_MANUF,
+    string2: CDC_STRING2_PRODUCT,
+    string3: CDC_STRING3_SERIAL,
 };
 
 static mut EP0_CONTROL: usb_endpoint::Endpoint = usb_endpoint::Endpoint
@@ -386,6 +444,7 @@ pub fn handler_reset(epn: usize)
     }
     usb_driver::set_address(0); // Ensure device address is reset to 0
 }
+
 /// Main handler for Endpoint 0 (Control Endpoint)
 pub fn handler_endpoint(epn: usize)
 {
