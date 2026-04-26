@@ -530,6 +530,10 @@ fn handle_class_request(ep: &mut usb_endpoint::Endpoint, setup: [u8; 8])
                 }
             }
 
+            // /* Test send message when opne serial */
+            // let data = b"Feature Cleared";
+            // send_echo(data);
+
             usb_driver::send_zero_length_packet(0);
         }
         // =========================
@@ -642,6 +646,9 @@ fn send_echo(data: &[u8])
 {
     unsafe
     {
+        // let ep_in = &mut EP0_CONTROL;
+        // let ep_in = &mut EP2_BULK_OUT;
+        // let ep_in = &mut EP1_INTERRUPT_IN;
         let ep_in = &mut EP3_BULK_IN;
         let len = data.len().min(64);
 
