@@ -498,9 +498,6 @@ pub fn handler_endpoint(epn: usize)
 
 fn handle_class_request(ep: &mut usb_endpoint::Endpoint, setup: [u8; 8])
 {
-    let mut setup = [0u8; 8];
-
-    usb_driver::pma_read(ep.rx_addr, &mut setup, 8);
     ep.state = usb_endpoint::EndpointState::Setup;
 
     // bRequest
@@ -595,21 +592,175 @@ fn handle_class_request(ep: &mut usb_endpoint::Endpoint, setup: [u8; 8])
     }
 }
 
+/// Handler OUT (EP2 Bulk OUT + EP0 DataOut)
+pub fn handle_out(ep: &mut usb_endpoint::Endpoint)
+{
+    let epn = ep.number as usize;
+    let len = usb_driver::read_rx_count(epn);
+
+    match ep.state
+    {
+        // ==================== User data (Bulk OUT - EP2) ====================
+        usb_endpoint::EndpointState::Idle | usb_endpoint::EndpointState::DataOut if epn == 2 =>
+        {
+            if len > 0
+            {
+                usb_driver::pma_read(ep.rx_addr, &mut ep.data_buffer, len as usize);
+
+                // ECHO: send by Bulk IN (EP3)
+                send_echo(&ep.data_buffer[..len as usize]);
+            }
+
+            usb_driver::set_stat_rx_valid(epn);
+            ep.state = usb_endpoint::EndpointState::Idle;
+        }
+        // ==================== SET_LINE_CODING response ====================
+        usb_endpoint::EndpointState::DataOut if epn == 0 =>
+        {
+            if len == 7
+            {
+                unsafe
+                {
+                    usb_driver::pma_read(ep.rx_addr, &mut LINE_CODING, 8);
+                }
+            }
+
+            // Status stage (ZLP)
+            ep.state = usb_endpoint::EndpointState::StatusIn;
+            usb_driver::write_tx_count(0, 0);
+            usb_driver::set_stat_tx_valid(0);
+            usb_driver::set_stat_tx_valid(2);
+        }
+        _ =>
+        {
+            usb_driver::set_stat_rx_valid(epn);
+        }
+    }
+}
+
+fn send_echo(data: &[u8])
+{
+    unsafe
+    {
+        let ep_in = &mut EP3_BULK_IN;
+        let len = data.len().min(64);
+
+        ep_in.data_buffer[..len].copy_from_slice(&data[..len]);
+
+        usb_driver::pma_write(ep_in.tx_addr, &ep_in.data_buffer[..len], len);
+        usb_driver::write_tx_count(ep_in.number as usize, len as u16);
+        usb_driver::set_stat_tx_valid(ep_in.number as usize);
+    }
+}
+
+// fn handle_out(ep: &mut usb_endpoint::Endpoint)
+// {
+//     match ep.state
+//     {
+//         usb_endpoint::EndpointState::Idle =>
+//         {
+//             // GET RX COUNT
+//             let len = usb_driver::read_rx_count(ep.number as usize);
+//             // PMA → buffer
+//             usb_driver::pma_read(ep.rx_addr, &mut ep.data_buffer, len);
+
+//             // DEBUG
+//             // for i in 0..len {
+//             //     // printa hex ou ascii
+//             // }
+//             // ECHO
+//             send_data(&ep.data_buffer[..len]);
+//             // // rearmar endpoint pra próxima recepção
+//             usb_driver::set_stat_rx_valid(ep.number as usize);
+//         },
+//         usb_endpoint::EndpointState::DataOut =>
+//         {
+//             unsafe 
+//             {
+//                 let len = usb_driver::read_rx_count(ep.number as usize);
+//                 usb_driver::pma_read(ep.rx_addr, &mut LINE_CODING, len);
+//             }
+            
+//             ep.state = usb_endpoint::EndpointState::Idle;
+//             usb_driver::send_zero_length_packet(ep.number as usize);
+//             // Status stage completed
+//             usb_driver::set_stat_rx_valid(ep.number as usize);
+//         },
+//         usb_endpoint::EndpointState::StatusOut =>
+//         {
+//             // GET RX COUNT
+//             let len = usb_driver::read_rx_count(ep.number as usize);
+//             // PMA → buffer
+//             usb_driver::pma_read(ep.rx_addr, &mut ep.data_buffer, len);
+
+//             // DEBUG
+//             // for i in 0..len {
+//             //     // printa hex ou ascii
+//             // }
+//             // ECHO
+//             send_data(&ep.data_buffer[..len]);
+
+//             ep.state = usb_endpoint::EndpointState::Idle;
+//             usb_driver::set_stat_tx_nak(ep.number as usize);
+//             usb_driver::set_stat_rx_valid(ep.number as usize);
+//         }
+//         _ => {}
+//     }
+// }
+
+// fn send_data(data: &[u8])
+// {
+//     unsafe
+//     {
+//         let ep = &mut EP3_BULK_IN;
+
+//         let len = data.len().min(64);
+
+//         // copia pro buffer do endpoint
+//         ep.data_buffer[..len].copy_from_slice(&data[..len]);
+
+//         // escreve na PMA
+//         usb_driver::pma_write(ep.tx_addr, &ep.data_buffer, len);
+
+//         // seta tamanho
+//         usb_driver::write_tx_count(ep.number as usize, len as u16);
+
+//         // manda pacote
+//         usb_driver::set_stat_tx_valid(ep.number as usize);
+//     }
+// }
+
+fn configure_epns()
+{
+    unsafe 
+    {
+        // usb_driver::configure_ep(&mut EP0_CONTROL, usb_types::EndpointType::CONTROL);
+        usb_driver::configure_ep(&mut EP1_INTERRUPT_IN, usb_types::EndpointType::INTERRUPT);
+        usb_driver::set_stat_tx_nak(EP1_INTERRUPT_IN.number as usize);
+        
+        usb_driver::configure_ep(&mut EP2_BULK_OUT, usb_types::EndpointType::BULK);
+        //usb_driver::write_rx_count(EP2_BULK_OUT.number as usize, 64);
+        usb_driver::set_stat_rx_valid(EP2_BULK_OUT.number as usize);
+        
+        usb_driver::configure_ep(&mut EP3_BULK_IN, usb_types::EndpointType::BULK);
+        usb_driver::set_stat_tx_nak(EP3_BULK_IN.number as usize);
+    }
+}
+
 pub fn init()
 {
     // Initialize USB peripheral
     crate::usb_peripheral::init();
-
     // Configure endpoints for CDC class
+    //configure_epns();
     unsafe 
     {
         usb_driver::configure_ep(&mut EP0_CONTROL, usb_types::EndpointType::CONTROL);
-        usb_driver::configure_ep(&mut EP1_INTERRUPT_IN, usb_types::EndpointType::INTERRUPT);
-        usb_driver::configure_ep(&mut EP2_BULK_OUT, usb_types::EndpointType::BULK);
-        usb_driver::configure_ep(&mut EP3_BULK_IN, usb_types::EndpointType::BULK);
-
-        usb_driver::enable_usb_peripheral();
+        // usb_driver::set_stat_tx_nak(0);
+        // usb_driver::set_stat_rx_valid(0);
     }
+
+    usb_driver::enable_usb_peripheral();
 }
 
 fn on_data_out(epn: usize, data: &[u8]) { /* log or buffer */ }
