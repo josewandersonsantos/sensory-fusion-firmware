@@ -180,11 +180,20 @@ pub enum EndpointType
 pub struct Descriptors
 {
     pub device_descriptor: [u8; 18],
+    // pub config_descriptor: [u8; 25],
     pub config_descriptor: [u8; 67],
     pub string0: [u8; 4],
     pub string1: [u8; 10],
     pub string2: [u8; 16],
     pub string3: [u8; 10],
+    
+    /*
+    pub config_descriptor: [u8; 67],
+    pub string0: [u8; 4],
+    pub string1: [u8; 38],
+    pub string2: [u8; 30],
+    pub string3: [u8; 18],
+    */
 }
 
 #[repr(C)]
