@@ -13,12 +13,13 @@ pub enum UsartMode
 }
 
 #[derive(Clone, Copy)]
+#[repr(u32)]
 pub enum UsartBaudRate
 {
-    B9600,
-    B115200,
-    B230400,
-    B460800,
+    B9600   = 9_600,
+    B115200 = 115_200,
+    B230400 = 230_400,
+    B460800 = 460_800,
 }
 
 #[derive(Clone, Copy)]
@@ -82,15 +83,21 @@ fn enable_it(usart: Usart, interrupt: UsartInterrupt)
     }
 }
 
-fn calculate_brr(baud_rate: UsartBaudRate, clock_freq: u32) -> u32
+fn get_clock(usart: Usart) -> u32
 {
-    match baud_rate
-    {
-        UsartBaudRate::B9600   => clock_freq / 9600,
-        UsartBaudRate::B115200 => clock_freq / 115200,
-        UsartBaudRate::B230400 => clock_freq / 230400,
-        UsartBaudRate::B460800 => clock_freq / 460800,
+    unsafe {
+        match usart {
+            Usart::Usart1 => mcu::PCLK2,
+            Usart::Usart2 => mcu::PCLK1,
+            Usart::Usart3 => mcu::PCLK1,
+        }
     }
+}
+
+fn calculate_brr(baud: UsartBaudRate, clock: u32) -> u32
+{
+    let baud = baud as u32;
+    (clock + baud / 2) / baud
 }
 
 pub fn start( usart: Usart, mode: UsartMode, use_it:UsartInterrupt, baud_rate: UsartBaudRate, word_length: UsartWordLength, stop_bits: UsartStopBits, parity: UsartParity)
@@ -160,7 +167,7 @@ pub fn start( usart: Usart, mode: UsartMode, use_it:UsartInterrupt, baud_rate: U
         utils::write_register32(cr2, cr2_val);
 
         // Configura baud rate (BRR)
-        let brr_val = calculate_brr(baud_rate, mcu::get_clock_frequency());
+        let brr_val = calculate_brr(baud_rate, get_clock(usart));
         utils::write_register32(brr, brr_val);
     }
 
