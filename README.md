@@ -2,7 +2,7 @@
 
 Projeto embarcado em Rust para fusão sensorial com **Blue Pill (STM32F103)**, utilizando os sensores:
 
-- 🛰️ **GPS NEO-6M** para localização geográfica (via protocolo NMEA)
+- 🛰️ **GPS NEO-6M** para localização geográfica (via protocolo NMEA/UBX)
 - 🧭 **~~MPU6050~~/~~MPU9250~~/ICM20948** para leitura de aceleração, giroscópio e magnômetro
 
 ## Objetivo
@@ -10,7 +10,7 @@ Projeto embarcado em Rust para fusão sensorial com **Blue Pill (STM32F103)**, u
 Integrar e processar dados de sensores para criar uma base de navegação confiável e de alta precisão, utilizando conceitos de *sensor fusion* em sistemas embarcados.
 
 ## Funcionalidades
-- Leitura de dados do GPS via UART (com parsing do protocolo NMEA)
+- Leitura de dados do GPS via UART (com parsing do protocolo NMEA/UBX)
 - Comunicação com ~~MPUXXXX~~ ICMXXXXX via I2C
 - Integração futura com filtro de fusão sensorial (ex: Complementar, Kalman)
 - Escrita em **Rust** com `#![no_std]`, focando em eficiência e segurança
