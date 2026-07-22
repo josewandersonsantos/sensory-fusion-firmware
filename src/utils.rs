@@ -135,7 +135,6 @@ pub unsafe fn write_bits16(addr: *mut u16, shift: u16, value: u16)
     write_register16(addr, updated);
 }
 
-
 pub fn as_bytes<T>(data: &T) -> &[u8]
 {
     unsafe

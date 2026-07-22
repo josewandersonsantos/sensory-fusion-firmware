@@ -1,7 +1,7 @@
 //! Endpoint definition
 use crate::usb_types;
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum EndpointState
 {
     Idle,       // Waiting for SETUP packet
@@ -12,7 +12,7 @@ pub enum EndpointState
     StatusOut,  // Status stage (OUT)
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct Endpoint
 {
     pub number: usb_types::Endpoints,

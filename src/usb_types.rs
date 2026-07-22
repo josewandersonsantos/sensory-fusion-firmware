@@ -6,7 +6,7 @@ pub const PMA_BASE: u32 = 0x40006000;
 
 #[repr(u8)]
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum Endpoints
 {
     EP0 = 0,
@@ -167,7 +167,7 @@ pub enum BTABLE_ADDRESS
     EP7_COUNT_RX = 0x3E,  // Endpoint 7 Number of bytes received (for OUT endpoints)
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum EndpointType
 {
     BULK        = 0,
