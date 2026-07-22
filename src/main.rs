@@ -12,11 +12,17 @@ mod startup_stm32f103;
 mod debug;
 mod utils;
 mod checksum;
+
 mod mcu;
 mod rcc;
 mod exti;
 mod gpio;
 mod usart;
+mod crc;
+mod watchdog;
+mod irq;
+mod led;
+mod i2c;
 
 mod usb_cdc;
 mod usb_core;
@@ -27,18 +33,18 @@ mod usb_endpoint;
 mod usb_types;
 mod usb_peripheral;
 
-mod crc;
-mod watchdog;
-mod irq;
-mod led;
-mod i2c;
-mod bridge;
 mod gps_neo6m;
-// mod mpu6050;
-// mod mpu9250;
 mod icm20948;
 mod fusion;
+
+mod bridge;
+mod ccb;
 mod kalman_filter;
+
+/* 
+mod mpu6050;
+mod mpu9250;
+*/
 
 /*
  * PANIC HANDLER
@@ -181,6 +187,24 @@ fn main() -> !
 
     debug!(debug::DebugLevel::Info, "=== SENSOR FUSION ===");
     debug!(debug::DebugLevel::Info, "v{}.{}.{}.{}", 0,0,0,1);
+
+    let mut cb: ccb::CircularBuffer<u8, 8> = ccb::CircularBuffer::new();
+    /*
+     * Test Circular buffer
+    cb.push(10).unwrap();
+    cb.push(20).unwrap();
+    cb.push(30).unwrap();
+
+    assert_eq!(cb.len(), 3);
+
+    assert_eq!(cb.pop(), Some(10));
+    assert_eq!(cb.pop(), Some(20));
+
+    cb.push(40).unwrap();
+    cb.push(50).unwrap();
+
+    assert_eq!(cb.peek(), Some(&30));
+     */
 
     // PC13 (LED)
     gpio::configure_pin(mcu::GPIOC_BASE, mcu::GPIO13, gpio::GpioMode::Output, gpio::GpioConfig::PushPull, Some(gpio::GpioSpeed::Speed2MHz));
