@@ -4,7 +4,9 @@
 #![allow(dead_code)]
 
 use crate::utils;
-static mut CLOCK_FREQUENCY: u32 = 8_000_000; // 8 MHz clock frequency
+pub static mut SYSCLK: u32 = 8_000_000; // 8 MHz clock frequency
+pub static mut PCLK1:  u32 = 8_000_000;
+pub static mut PCLK2:  u32 = 8_000_000;
 /*
  * Memory-mapped addresses for GPIO ports
  */
@@ -365,7 +367,21 @@ pub fn init_clock(sys_clk: SysClock) -> u8
         SysClock::HSE72MHz => 72_000_000,
     };
 
-    unsafe { CLOCK_FREQUENCY = sysclk; };
+    unsafe 
+    {
+        SYSCLK = sysclk;
+
+        if sysclk > 36_000_000
+        {
+            PCLK1 = sysclk / 2;
+        }
+        else
+        {
+            PCLK1 = sysclk;
+        }
+
+        PCLK2 = sysclk;
+    }
 
     // =========================
     // 1. Calcular PLL
@@ -497,7 +513,17 @@ pub fn init_clock(sys_clk: SysClock) -> u8
     1
 }
 
-pub fn get_clock_frequency() -> u32
+pub fn get_sysclk() -> u32
 {
-    unsafe { CLOCK_FREQUENCY }
+    unsafe { SYSCLK }
+}
+
+pub fn get_pclk1() -> u32
+{
+    unsafe { PCLK1 }
+}
+
+pub fn get_pclk2() -> u32
+{
+    unsafe { PCLK2 }
 }
