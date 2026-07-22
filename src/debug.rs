@@ -40,6 +40,17 @@ impl Write for DebugWriter
     }
 }
 
+pub fn array_to_hex(data: &[u8])
+{
+    for byte in data
+    {
+        write!(DebugWriter, "{:02X} ", byte).ok();
+    }
+    
+    let mut writer = DebugWriter;
+    let _ = writer.write_str("\r\n");
+}
+
 pub fn write(level: DebugLevel, args: fmt::Arguments)
 {
     unsafe
