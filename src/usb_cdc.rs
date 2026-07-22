@@ -5,6 +5,7 @@
 
 use crate::mcu;
 use crate::utils;
+use crate::debug;
 use crate::usb_types;
 use crate::usb_driver;
 use crate::usb_control;
@@ -417,6 +418,8 @@ pub fn handler_endpoint_interrupt()
 
 pub fn handler_reset(epn: usize)
 {
+    debug!(debug::DebugLevel::Verbose, "HANDLER RESET");
+
     configure_epns();
     unsafe
     {
@@ -491,7 +494,6 @@ pub fn handler_endpoint(epn: usize)
             usb_driver::clear_ctr_tx(epn);
             usb_control::handle_in(ep);
         }
-    
     }
 
 }
@@ -506,6 +508,10 @@ fn handle_class_request(ep: &mut usb_endpoint::Endpoint, setup: [u8; 8])
     let wvalue      = ((setup[3] as u16) << 8) | (setup[2] as u16);
     let windex      = ((setup[5] as u16) << 8) | (setup[4] as u16);
     let wlength     = ((setup[7] as u16) << 8) | (setup[6] as u16);
+
+    debug!(debug::DebugLevel::Verbose, "CR--> EP {:?} STT {:?}", ep.number, ep.state);
+    debug!(debug::DebugLevel::Verbose, "CR--> ");
+    debug::array_to_hex(&setup);
     
     match brequest
     {
@@ -602,6 +608,8 @@ pub fn handle_out(ep: &mut usb_endpoint::Endpoint)
     let epn = ep.number as usize;
     let len = usb_driver::read_rx_count(epn);
 
+    debug!(debug::DebugLevel::Verbose, "HO [{}]--> {:?} {:?}", len, ep.number, ep.state);
+
     match ep.state
     {
         // ==================== User data (Bulk OUT - EP2) ====================
@@ -612,6 +620,7 @@ pub fn handle_out(ep: &mut usb_endpoint::Endpoint)
                 usb_driver::pma_read(ep.rx_addr, &mut ep.data_buffer, len as usize);
 
                 // ECHO: send by Bulk IN (EP3)
+                debug!(debug::DebugLevel::Verbose, "ECHO: send by Bulk IN (EP3)");
                 send_echo(&ep.data_buffer[..len as usize]);
             }
 
@@ -630,6 +639,7 @@ pub fn handle_out(ep: &mut usb_endpoint::Endpoint)
             }
 
             // Status stage (ZLP)
+            debug!(debug::DebugLevel::Verbose, "Status stage (ZLP)");
             ep.state = usb_endpoint::EndpointState::StatusIn;
             usb_driver::write_tx_count(0, 0);
             usb_driver::set_stat_tx_valid(0);
@@ -637,6 +647,7 @@ pub fn handle_out(ep: &mut usb_endpoint::Endpoint)
         }
         _ =>
         {
+            debug!(debug::DebugLevel::Verbose, "Set RX Valid");
             usb_driver::set_stat_rx_valid(epn);
         }
     }

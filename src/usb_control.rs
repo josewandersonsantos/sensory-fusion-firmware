@@ -6,6 +6,7 @@
 
 use crate::mcu;
 use crate::utils;
+use crate::debug;
 use crate::usb_driver;
 use crate::usb_types;
 use crate::usb_endpoint;
@@ -74,6 +75,8 @@ fn handle_set_address(ep: &mut usb_endpoint::Endpoint, wValue: u16)
     let new_address = (wValue & 0x7F) as u8; // Device address is in wValue for SET_ADDRESS
     // Store the new address temporarily in the endpoint handler struct
     ep.address = new_address;
+
+    // usb_driver::set_address(new_address);
     
     usb_driver::write_tx_count(ep.number as usize, 0); // ZLP
     usb_driver::set_stat_tx_valid(ep.number as usize);
@@ -106,6 +109,10 @@ pub fn handle_setup(ep: &mut usb_endpoint::Endpoint, descriptors: &usb_types::De
 
     usb_driver::pma_read(ep.rx_addr, &mut setup, 8);
     ep.state = usb_endpoint::EndpointState::Setup;
+
+    debug!(debug::DebugLevel::Verbose, "STP--> EP {:?} STT {:?}", ep.number, ep.state);
+    debug!(debug::DebugLevel::Verbose, "STP--> ");
+    debug::array_to_hex(&setup);
 
     // bRequest
     let brequesttype = setup[0];
@@ -151,6 +158,8 @@ pub fn handle_in(ep: &mut usb_endpoint::Endpoint)
 {
     unsafe
     {
+        debug!(debug::DebugLevel::Verbose, "HI--> {:?} {:?} P:{:?} L:{:?}", ep.number, ep.state, ep.position, ep.length);
+
         match ep.state
         {
             usb_endpoint::EndpointState::DataIn =>
@@ -187,6 +196,8 @@ pub fn handle_in(ep: &mut usb_endpoint::Endpoint)
 /// Called when an OUT transaction completes
 pub fn handle_out(ep: &mut usb_endpoint::Endpoint)
 {
+    debug!(debug::DebugLevel::Verbose, "HO--> {:?} {:?} P:{:?} L:{:?}", ep.number, ep.state, ep.position, ep.length);
+    
     match ep.state
     {
         usb_endpoint::EndpointState::StatusOut =>
