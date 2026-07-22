@@ -9,6 +9,7 @@
 use core::{panic::PanicInfo, sync::atomic::AtomicBool, sync::atomic::Ordering};
 
 mod startup_stm32f103;
+mod debug;
 mod utils;
 mod checksum;
 mod mcu;
@@ -163,7 +164,7 @@ fn cb_coords_from_gps(lat: f32, lng: f32, height : f32)
 fn main() -> !
 {
     // Set system clock
-    mcu::init_clock(mcu::SysClock::HSE72MHz);
+    mcu::init_clock(mcu::SysClock::HSE48MHz);
 
     // RCC peripheral clocks
     rcc::apb2::enable(rcc::apb2::Apb2Peripheral::Afio);
@@ -175,6 +176,12 @@ fn main() -> !
     // IWDG
     // watchdog::iwdg::init(500);
     
+    // Debug
+    debug::init(usart::Usart::Usart2, debug::DebugLevel::Verbose);
+
+    debug!(debug::DebugLevel::Info, "=== SENSOR FUSION ===");
+    debug!(debug::DebugLevel::Info, "v{}.{}.{}.{}", 0,0,0,1);
+
     // PC13 (LED)
     gpio::configure_pin(mcu::GPIOC_BASE, mcu::GPIO13, gpio::GpioMode::Output, gpio::GpioConfig::PushPull, Some(gpio::GpioSpeed::Speed2MHz));
     gpio::configure_pin(mcu::GPIOB_BASE, mcu::GPIO00, gpio::GpioMode::Output, gpio::GpioConfig::PushPull, Some(gpio::GpioSpeed::Speed2MHz));
@@ -205,10 +212,6 @@ fn main() -> !
         }
     }
 
-    // USART2 (DEBUG)
-    gpio::configure_pin(mcu::GPIOA_BASE, mcu::GPIO02, gpio::GpioMode::AlternateFunction, gpio::GpioConfig::AfPushPull, Some(gpio::GpioSpeed::Speed50MHz));
-    gpio::configure_pin(mcu::GPIOA_BASE, mcu::GPIO03, gpio::GpioMode::Input, gpio::GpioConfig::Floating, None);
-    usart::start( usart::Usart::Usart2, usart::UsartMode::TxRx, usart::UsartInterrupt::RxInterrupt, usart::UsartBaudRate::B230400, usart::UsartWordLength::Length8Bits, usart::UsartStopBits::Stop1Bit, usart::UsartParity::None);
     
     // USART1 (GPS)
     gpio::configure_pin(mcu::GPIOA_BASE, mcu::GPIO09, gpio::GpioMode::AlternateFunction, gpio::GpioConfig::AfPushPull, Some(gpio::GpioSpeed::Speed50MHz));
