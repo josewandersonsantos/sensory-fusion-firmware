@@ -124,7 +124,7 @@ fn send_mpu_data()
     let (acc_x, acc_y, acc_z) = icm20948::accel_g(&i2c::I2C::I2C1, icm20948::AccelRange::G2);
     let (gyr_x, gyr_y, gyr_z) = icm20948::gyro_dps(&i2c::I2C::I2C1, icm20948::GyroRange::D500);
     let temp_c                          = icm20948::temperature_c(&i2c::I2C::I2C1);
-    let (mag_x, mag_y, mag_z) = icm20948::mag_raw(&i2c::I2C::I2C1);
+    // let (mag_x, mag_y, mag_z) = icm20948::mag_raw(&i2c::I2C::I2C1);
 
     icm20948::clear_data_ready(&i2c::I2C::I2C1);
 

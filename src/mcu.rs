@@ -443,7 +443,7 @@ pub fn init_clock(sys_clk: SysClock) -> u8
         // APB1
         if sysclk > 36_000_000
         {
-            cfgr |= (0b100 << 8); // divide by 2
+            cfgr |= 0b100 << 8; // divide by 2
         }
         else
         {
@@ -456,11 +456,11 @@ pub fn init_clock(sys_clk: SysClock) -> u8
         // =========================
         // PLL
         // =========================
-        cfgr |= (1 << 16); // HSE source
+        cfgr |= 1 << 16; // HSE source
         cfgr &= !(1 << 17);
 
         cfgr &= !(0b1111 << 18);
-        cfgr |= ((pll_mul - 2) << 18);
+        cfgr |= (pll_mul - 2) << 18;
 
         if sysclk == 72_000_000
         {
@@ -468,7 +468,7 @@ pub fn init_clock(sys_clk: SysClock) -> u8
         }
         else if sysclk == 48_000_000
         {
-            cfgr |= (1 << 22); // /1
+            cfgr |= 1 << 22; // /1
         }
 
         utils::write_register32(rcc_cfgr, cfgr);
@@ -494,8 +494,7 @@ pub fn init_clock(sys_clk: SysClock) -> u8
 
     unsafe
     {
-        let rcc_cfgr = RCC_CFGR as *mut u32;
-        let sws = (utils::read_register32(rcc_cfgr) >> 2) & 0b11;
+        // let sws = (utils::read_register32(rcc_cfgr) >> 2) & 0b11;
         
         // MCO = PLL / 2
         let rcc_cfgr = RCC_CFGR as *mut u32;
@@ -505,7 +504,7 @@ pub fn init_clock(sys_clk: SysClock) -> u8
         cfgr &= !(0b110 << 24);
 
         // seleciona PLL/2 → 111
-        cfgr |= (0b110 << 24);
+        cfgr |= 0b110 << 24;
 
         utils::write_register32(rcc_cfgr, cfgr);
     }

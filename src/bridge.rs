@@ -131,7 +131,7 @@ pub fn verify_package(frame: FrameTx) -> u8
 {
     let crc_rx = frame.crc;
     let bytes = utils::as_bytes(&frame);
-    let crc_cl = checksum::get_crc16(&bytes, (frame.header.size + HEADER_SIZE as u16));
+    let crc_cl = checksum::get_crc16(&bytes, frame.header.size + HEADER_SIZE as u16);
     
     (crc_cl == crc_rx) as u8
 }
