@@ -90,7 +90,7 @@ pub extern "C" fn USART1_Handler()
         if (sr & mcu::USART_SR_RXNE) != 0
         {
             let data = utils::read_register32(usart1_dr) as u8;
-            gps_neo6m::push_byte(data);
+            gps_neo6m::append_byte(data);
 
             //while (utils::read_register32(usart1_sr) & mcu::USART_SR_TXE) == 0 {}
             // utils::write_register32(usart1_dr, data as u32);
