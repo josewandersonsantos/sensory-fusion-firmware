@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 
 use crate::usart;
+use crate::ccb;
 /*
  * CONST
  */
@@ -9,10 +10,7 @@ const LINE_SIZE: usize = 128;
 /*
  * VARIABLES
  */
-static mut RX_BUFFER: [u8; BUFFER_SIZE] = [0; BUFFER_SIZE];
-static mut RX_HEAD: usize = 0;
-static mut RX_TAIL: usize = 0;
-
+static mut RX_BUFFER: ccb::CircularBuffer<u8, BUFFER_SIZE> = ccb::CircularBuffer::new();
 static mut LINE: [u8; LINE_SIZE] = [0; LINE_SIZE];
 static mut LINE_POS: usize = 0;
 
@@ -99,41 +97,19 @@ pub enum UBXId
     CfgNav5 = 0x24,
 }
 
-pub fn push_byte(byte: u8)
+pub fn append_byte(value: u8)
 {
     unsafe
     {
-        let next_head = (RX_HEAD + 1) % BUFFER_SIZE;
-        if next_head != RX_TAIL
-        {
-            RX_BUFFER[RX_HEAD] = byte;
-            RX_HEAD = next_head;
-        }
-    }
-}
-
-pub fn pop_byte() -> Option<u8>
-{
-    unsafe
-    {
-        if RX_HEAD == RX_TAIL
-        {
-            None
-        }
-        else
-        {
-            let byte = RX_BUFFER[RX_TAIL];
-            RX_TAIL = (RX_TAIL + 1) % BUFFER_SIZE;
-            Some(byte)
-        }
+        let _ = RX_BUFFER.push(value);
     }
 }
 
 pub fn process_gps()
 {
-    while let Some(byte) = pop_byte()
+    unsafe
     {
-        unsafe
+        while let Some(byte) = RX_BUFFER.pop()
         {
             if byte == b'\n'
             {

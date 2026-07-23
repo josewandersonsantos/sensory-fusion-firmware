@@ -90,7 +90,7 @@ pub extern "C" fn USART1_Handler()
         if (sr & mcu::USART_SR_RXNE) != 0
         {
             let data = utils::read_register32(usart1_dr) as u8;
-            gps_neo6m::push_byte(data);
+            gps_neo6m::append_byte(data);
 
             //while (utils::read_register32(usart1_sr) & mcu::USART_SR_TXE) == 0 {}
             // utils::write_register32(usart1_dr, data as u32);
@@ -188,9 +188,9 @@ fn main() -> !
     debug!(debug::DebugLevel::Info, "=== SENSOR FUSION ===");
     debug!(debug::DebugLevel::Info, "v{}.{}.{}.{}", 0,0,0,1);
 
-    let mut cb: ccb::CircularBuffer<u8, 8> = ccb::CircularBuffer::new();
     /*
      * Test Circular buffer
+    let mut cb: ccb::CircularBuffer<u8, 8> = ccb::CircularBuffer::new();
     cb.push(10).unwrap();
     cb.push(20).unwrap();
     cb.push(30).unwrap();
@@ -204,7 +204,7 @@ fn main() -> !
     cb.push(50).unwrap();
 
     assert_eq!(cb.peek(), Some(&30));
-     */
+    */
 
     // PC13 (LED)
     gpio::configure_pin(mcu::GPIOC_BASE, mcu::GPIO13, gpio::GpioMode::Output, gpio::GpioConfig::PushPull, Some(gpio::GpioSpeed::Speed2MHz));
