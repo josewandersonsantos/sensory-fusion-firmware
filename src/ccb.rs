@@ -11,7 +11,7 @@ pub struct CircularBuffer<T, const N: usize>
 
 impl<T, const N: usize> CircularBuffer<T, N>
 {
-    pub fn new() -> Self
+    pub const fn new() -> Self
     {
         assert!(N > 0);
         Self {buffer: unsafe { MaybeUninit::uninit().assume_init() }, head: 0, tail: 0, len: 0}
