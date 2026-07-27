@@ -14,8 +14,10 @@ jobs:
   on-success:
     runs-on: ubuntu-latest
     steps:
-      - name: Install llvm-tools
-        run: rustup component add llvm-tools
+    #   - name: Install llvm-tools
+    #   run: rustup component add llvm-tools
+      - name: Install cargo binutils
+        run: cargo install cargo-binutils
 
       - name: Upload ELF
         uses: actions/upload-artifact@v4
@@ -25,11 +27,8 @@ jobs:
           path: target/thumbv7m-none-eabi/release/sensory-fusion
     
       - name: Generate BIN
-        run: |
-            llvm-objcopy \
-            -O binary \
-            target/thumbv7m-none-eabi/release/sensory-fusion \
-            target/thumbv7m-none-eabi/release/sensory-fusion.bin
+        run: cargo objcopy --release --target thumbv7m-none-eabi -- -O binary target/thumbv7m-none-eabi/release/sensory-fusion.bin
+            # llvm-objcopy -O binary target/thumbv7m-none-eabi/release/sensory-fusion target/thumbv7m-none-eabi/release/sensory-fusion.bin
 
       - name: Upload BIN
         uses: actions/upload-artifact@v4
@@ -38,11 +37,8 @@ jobs:
           path: target/thumbv7m-none-eabi/release/*.bin
 
       - name: Generate HEX
-        run: |
-            llvm-objcopy \
-            -O ihex \
-            target/thumbv7m-none-eabi/release/sensory-fusion \
-            target/thumbv7m-none-eabi/release/sensory-fusion.hex
+        run: cargo objcopy --release --target thumbv7m-none-eabi -- -O ihex target/thumbv7m-none-eabi/release/sensory-fusion.hex
+            # llvm-objcopy -O ihex target/thumbv7m-none-eabi/release/sensory-fusion target/thumbv7m-none-eabi/release/sensory-fusion.hex
 
       - name: Upload HEX
         uses: actions/upload-artifact@v4
