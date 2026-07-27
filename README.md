@@ -82,6 +82,10 @@ This project targets the **STM32F103C8T6** and requires the embedded Rust toolch
 ```bash
 rustup target add thumbv7m-none-eabi
 
+rustup component add llvm-tools
+
+cargo install cargo-binutils
+
 cargo build --release --target thumbv7m-none-eabi
 
 # Flashing may vary depending on your setup
