@@ -1,15 +1,15 @@
 
 /debug
 /release
+/flycheck*
 
 /CACHEDIR.TAG
 /.rustc_info.json
 
-/thumbv7m-none-eabi/doc
-
 /thumbv7m-none-eabi/.rustdoc_fingerprint.json
 /thumbv7m-none-eabi/CACHEDIR.TAG
 /thumbv7m-none-eabi/debug/
+/thumbv7m-none-eabi/doc
 
 /thumbv7m-none-eabi/release/.fingerprint
 /thumbv7m-none-eabi/release/deps

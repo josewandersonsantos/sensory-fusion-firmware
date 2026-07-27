@@ -3,6 +3,8 @@ name: Docs
 on:
   workflow_run:
     workflows: ["Release"]
+    types:
+      - completed
 jobs:
   on-sucess:
       runs-on: ubuntu-latest

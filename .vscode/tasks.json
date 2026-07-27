@@ -9,6 +9,36 @@
 			],
 			"group": "build",
 			"label": "rust: cargo build[MCU]"
+		},
+		{
+			"label": "Cargo Build",
+			"group": "build",
+			"type": "shell",
+			"command": "cargo",
+			"args": 
+			[ 
+				"build" ,
+			],
+			"problemMatcher":
+			[
+				"$rustc"
+			]
+		},
+		{
+			"label": "Cargo Flash",
+			"group": "build",
+			"type": "shell",
+			"command": "cargo",
+			"dependsOn": "rust: cargo build[MCU]",
+			"args": 
+			[ 
+				"flash",
+				"--chip STM32F103C8T6",
+			],
+			"problemMatcher":
+			[
+				"$rustc"
+			]
 		}
 	]
 }
