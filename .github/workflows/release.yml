@@ -14,17 +14,35 @@ jobs:
   on-success:
     runs-on: ubuntu-latest
     steps:
+      - name: Install llvm-tools
+        run: rustup component add llvm-tools
+
       - name: Upload ELF
         uses: actions/upload-artifact@v4
         with:
           name: firmware-elf
-          path: target/thumbv7m-none-eabi/release/*.elf
+        #   path: target/thumbv7m-none-eabi/release/*.elf
+          path: target/thumbv7m-none-eabi/release/sensory-fusion
+    
+      - name: Generate BIN
+        run: |
+            llvm-objcopy \
+            -O binary \
+            target/thumbv7m-none-eabi/release/sensory-fusion \
+            target/thumbv7m-none-eabi/release/sensory-fusion.bin
 
       - name: Upload BIN
         uses: actions/upload-artifact@v4
         with:
           name: firmware-bin
           path: target/thumbv7m-none-eabi/release/*.bin
+
+      - name: Generate HEX
+        run: |
+            llvm-objcopy \
+            -O ihex \
+            target/thumbv7m-none-eabi/release/sensory-fusion \
+            target/thumbv7m-none-eabi/release/sensory-fusion.hex
 
       - name: Upload HEX
         uses: actions/upload-artifact@v4
