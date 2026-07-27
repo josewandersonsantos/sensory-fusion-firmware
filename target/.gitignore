@@ -9,13 +9,7 @@
 
 /thumbv7m-none-eabi/.rustdoc_fingerprint.json
 /thumbv7m-none-eabi/CACHEDIR.TAG
-
-/thumbv7m-none-eabi/debug/.fingerprint
-/thumbv7m-none-eabi/debug/deps
-/thumbv7m-none-eabi/debug/examples
-/thumbv7m-none-eabi/debug/incremental
-/thumbv7m-none-eabi/debug/.cargo-lock
-/thumbv7m-none-eabi/debug/sensory_fusion.d
+/thumbv7m-none-eabi/debug/
 
 /thumbv7m-none-eabi/release/.fingerprint
 /thumbv7m-none-eabi/release/deps
