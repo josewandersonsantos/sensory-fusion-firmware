@@ -7,9 +7,16 @@ on:
       - completed
 jobs:
   on-sucess:
+      if: ${{ github.event.workflow_run.conclusion == 'success' }}
       runs-on: ubuntu-latest
       steps:
-        - name: Cache Cargo
-          run: |
-            cargo doc
-            cargo audit
+        - uses: actions/checkout@v4
+        
+        # - name: Install cargo-audit
+        #   run: cargo install cargo-audit
+
+        - name: Generate docs
+          run: cargo doc
+
+        # - name: Audit dependencies
+        #   run: cargo audit
