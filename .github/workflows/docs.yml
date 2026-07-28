@@ -11,6 +11,7 @@ jobs:
       runs-on: ubuntu-latest
       steps:
         - uses: actions/checkout@v4
+        - run: rustup target add thumbv7m-none-eabi
         
         # - name: Install cargo-audit
         #   run: cargo install cargo-audit
