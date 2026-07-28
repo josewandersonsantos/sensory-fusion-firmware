@@ -287,10 +287,10 @@ pub fn send_zero_length_packet(epn: usize)
 
 pub fn configure_ep(ep: &mut usb_endpoint::Endpoint, ep_type: usb_types::EndpointType)
 {
-    let mut btable_rx_count: usize = 0;
-    let mut btable_rx_addr: usize  = 0;
-    let mut btable_tx_count: usize = 0;
-    let mut btable_tx_addr: usize  = 0;
+    let btable_rx_count: usize;
+    let btable_rx_addr: usize;
+    let btable_tx_count: usize;
+    let btable_tx_addr: usize;
 
     match ep.number
     {
