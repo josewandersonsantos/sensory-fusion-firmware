@@ -14,34 +14,53 @@ jobs:
   on-success:
     runs-on: ubuntu-latest
     steps:
-    #   - name: Install llvm-tools
-    #   run: rustup component add llvm-tools
-      - name: Install cargo binutils
-        run: cargo install cargo-binutils
+    - uses: actions/checkout@v4
 
-      - name: Upload ELF
-        uses: actions/upload-artifact@v4
-        with:
-          name: firmware-elf
-        #   path: target/thumbv7m-none-eabi/release/*.elf
-          path: target/thumbv7m-none-eabi/release/sensory_fusion
+    - uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: thumbv7m-none-eabi
+
+    - run: cargo install cargo-binutils
+
+    - run: cargo build --release --target thumbv7m-none-eabi
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: firmware-elf
+        path: target/thumbv7m-none-eabi/release/sensory_fusion
+
+    - run: cargo objcopy --release --target thumbv7m-none-eabi -- -O binary target/thumbv7m-none-eabi/release/sensory_fusion.bin
+
+    - run: cargo objcopy --release --target thumbv7m-none-eabi -- -O ihex target/thumbv7m-none-eabi/release/sensory_fusion.hex
+    # steps:
+    # #   - name: Install llvm-tools
+    # #   run: rustup component add llvm-tools
+    #   - name: Install cargo binutils
+    #     run: cargo install cargo-binutils
+
+    #   - name: Upload ELF
+    #     uses: actions/upload-artifact@v4
+    #     with:
+    #       name: firmware-elf
+    #     #   path: target/thumbv7m-none-eabi/release/*.elf
+    #       path: target/thumbv7m-none-eabi/release/sensory_fusion
     
-      - name: Generate BIN
-        run: cargo objcopy --release --target thumbv7m-none-eabi -- -O binary target/thumbv7m-none-eabi/release/sensory_fusion.bin
-            # llvm-objcopy -O binary target/thumbv7m-none-eabi/release/sensory_fusion target/thumbv7m-none-eabi/release/sensory_fusion.bin
+    #   - name: Generate BIN
+    #     run: cargo objcopy --release --target thumbv7m-none-eabi -- -O binary target/thumbv7m-none-eabi/release/sensory_fusion.bin
+    #         # llvm-objcopy -O binary target/thumbv7m-none-eabi/release/sensory_fusion target/thumbv7m-none-eabi/release/sensory_fusion.bin
 
-      - name: Upload BIN
-        uses: actions/upload-artifact@v4
-        with:
-          name: firmware-bin
-          path: target/thumbv7m-none-eabi/release/*.bin
+    #   - name: Upload BIN
+    #     uses: actions/upload-artifact@v4
+    #     with:
+    #       name: firmware-bin
+    #       path: target/thumbv7m-none-eabi/release/*.bin
 
-      - name: Generate HEX
-        run: cargo objcopy --release --target thumbv7m-none-eabi -- -O ihex target/thumbv7m-none-eabi/release/sensory_fusion.hex
-            # llvm-objcopy -O ihex target/thumbv7m-none-eabi/release/sensory_fusion target/thumbv7m-none-eabi/release/sensory_fusion.hex
+    #   - name: Generate HEX
+    #     run: cargo objcopy --release --target thumbv7m-none-eabi -- -O ihex target/thumbv7m-none-eabi/release/sensory_fusion.hex
+    #         # llvm-objcopy -O ihex target/thumbv7m-none-eabi/release/sensory_fusion target/thumbv7m-none-eabi/release/sensory_fusion.hex
 
-      - name: Upload HEX
-        uses: actions/upload-artifact@v4
-        with:
-          name: firmware-hex
-          path: target/thumbv7m-none-eabi/release/*.hex
+    #   - name: Upload HEX
+    #     uses: actions/upload-artifact@v4
+    #     with:
+    #       name: firmware-hex
+    #       path: target/thumbv7m-none-eabi/release/*.hex
