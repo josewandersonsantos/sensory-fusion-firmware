@@ -101,7 +101,8 @@ pub fn append_byte(value: u8)
 {
     unsafe
     {
-        let _ = RX_BUFFER.push(value);
+        let buffer = &raw mut RX_BUFFER;
+        let _ = (*buffer).push(value).unwrap();
     }
 }
 
@@ -109,7 +110,8 @@ pub fn process_gps()
 {
     unsafe
     {
-        while let Some(byte) = RX_BUFFER.pop()
+        let buffer = &raw mut RX_BUFFER;
+        while let Some(byte) = (*buffer).pop()
         {
             if byte == b'\n'
             {
