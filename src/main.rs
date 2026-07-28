@@ -74,7 +74,7 @@ pub extern "C" fn USB_LP_CAN_RX0_Handler()
 #[no_mangle]
 pub extern "C" fn EXTI4_Handler()
 {
-    send_mpu_data();
+    manage_imu_data();
     exti::clear_pending_interrupt(mcu::GPIO04);
 }
 
@@ -118,7 +118,7 @@ fn send_frame(frame: &bridge::FrameTx)
     MTX_SEND_FRAME.store(false, Ordering::Release);
 }
 
-fn send_mpu_data()
+fn manage_imu_data()
 {
     // Read ICM20948 data
     let (acc_x, acc_y, acc_z) = icm20948::accel_g(&i2c::I2C::I2C1, icm20948::AccelRange::G2);
@@ -128,6 +128,15 @@ fn send_mpu_data()
 
     icm20948::clear_data_ready(&i2c::I2C::I2C1);
 
+    /*
+     * Feed sensory fusion
+      TODO: Implement...
+     */
+    // fusion::
+
+    /*
+     * Send data by debug out
+     */
     let mut payload = [0u8; 28];
     let frame = bridge::get_package_mpu_data(&mut payload, acc_x, acc_y, acc_z, gyr_x, gyr_y, gyr_z, temp_c);
     send_frame(&frame);
@@ -180,7 +189,7 @@ fn main() -> !
     // rcc::ahb::enable(rcc::ahb::AHBPeripheral::Crc);
     
     // IWDG
-    // watchdog::iwdg::init(500);
+    watchdog::iwdg::init(500);
     
     // Debug
     debug::init(usart::Usart::Usart2, debug::DebugLevel::Verbose);
@@ -213,6 +222,8 @@ fn main() -> !
     // PA8 (MCO)
     gpio::configure_pin(mcu::GPIOA_BASE, mcu::GPIO08, gpio::GpioMode::AlternateFunction, gpio::GpioConfig::AfPushPull, Some(gpio::GpioSpeed::Speed50MHz));
 
+    /*
+     * Test USB Driver
     // USB
     // PA11 (D-)
     gpio::configure_pin(mcu::GPIOA_BASE, mcu::GPIO11, gpio::GpioMode::AlternateFunction, gpio::GpioConfig::AfPushPull, Some(gpio::GpioSpeed::Speed50MHz)); // DM
@@ -235,7 +246,7 @@ fn main() -> !
             utils::delay_ms(100);
         }
     }
-
+    */
     
     // USART1 (GPS)
     gpio::configure_pin(mcu::GPIOA_BASE, mcu::GPIO09, gpio::GpioMode::AlternateFunction, gpio::GpioConfig::AfPushPull, Some(gpio::GpioSpeed::Speed50MHz));
@@ -249,6 +260,7 @@ fn main() -> !
     gpio::configure_pin(mcu::GPIOB_BASE, mcu::GPIO07, gpio::GpioMode::AlternateFunction, gpio::GpioConfig::AfOpenDrain, Some(gpio::GpioSpeed::Speed50MHz));
     i2c::start(i2c::I2C::I2C1, i2c::I2CClockSpeed::Standard100kHz);
     icm20948::init(&i2c::I2C::I2C1, icm20948::AccelRange::G2, icm20948::GyroRange::D250);
+
     // ICM20948 Pin IT
     gpio::configure_pin(mcu::GPIOB_BASE, mcu::GPIO04, gpio::GpioMode::Input, gpio::GpioConfig::PullUpDown, None);
     gpio::write_pin(mcu::GPIOB_BASE, mcu::GPIO04, true);
@@ -266,8 +278,8 @@ fn main() -> !
         led::led_toggle(mcu::GPIOC_BASE, mcu::GPIO13);
         // Process GPS data
         gps_neo6m::process_gps();
-        // Send ICM20948 data
-        send_mpu_data();
+        // Manage ICM20948 data
+        manage_imu_data();
         // Delay
         utils::delay_ms(50);
     }
