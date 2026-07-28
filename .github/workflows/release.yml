@@ -20,6 +20,8 @@ jobs:
       with:
         targets: thumbv7m-none-eabi
 
+    - run: rustup component add llvm-tools
+    
     - run: cargo install cargo-binutils
 
     - run: cargo build --release --target thumbv7m-none-eabi
