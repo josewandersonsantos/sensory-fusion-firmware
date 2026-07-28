@@ -421,9 +421,9 @@ pub fn handler_reset(epn: usize)
     debug!(debug::DebugLevel::Verbose, "HANDLER RESET");
 
     configure_epns();
-    unsafe
-    {
-        usb_driver::configure_ep(&mut EP0_CONTROL, usb_types::EndpointType::CONTROL);
+    // unsafe
+    // {
+        usb_driver::configure_ep(&raw mut EP0_CONTROL, usb_types::EndpointType::CONTROL);
         // match epn
         // {
         //     0 =>
@@ -444,7 +444,7 @@ pub fn handler_reset(epn: usize)
         //     }
         //     _=> {return;}
         // }
-    }
+    // }
     usb_driver::set_address(0); // Ensure device address is reset to 0
 }
 
@@ -457,10 +457,10 @@ pub fn handler_endpoint(epn: usize)
         let epv          = core::ptr::read_volatile(epr);
         let ep = match epn
         {
-            0 => &mut EP0_CONTROL,
-            1 => &mut EP1_INTERRUPT_IN,
-            2 => &mut EP2_BULK_OUT,
-            3 => &mut EP3_BULK_IN,
+            0 => &raw mut EP0_CONTROL,
+            1 => &raw mut EP1_INTERRUPT_IN,
+            2 => &raw mut EP2_BULK_OUT,
+            3 => &raw mut EP3_BULK_IN,
             _ => { return; }
         };
 
@@ -473,16 +473,16 @@ pub fn handler_endpoint(epn: usize)
             if epv & (1 << usb_types::USBEPnR::SETUP as u16) != 0 // SETUP bit set
             {
                 // Return 1 to indicate setup not handled, so class-specific handler can try to process it
-                if let Some(setup) = usb_control::handle_setup(ep, &DESCRIPTORS)
+                if let Some(setup) = usb_control::handle_setup(&mut *ep, &DESCRIPTORS)
                 {
-                    handle_class_request(ep, setup);
+                    handle_class_request(&mut *ep, setup);
                 }
             }
             else
             {
                 // Regular OUT data packet
                 // usb_control::handle_out(ep);
-                handle_out(ep);
+                handle_out(&mut *ep);
             }
         }
         
@@ -492,7 +492,7 @@ pub fn handler_endpoint(epn: usize)
         if epv & (1 << usb_types::USBEPnR::CTR_TX as u16) != 0
         {
             usb_driver::clear_ctr_tx(epn);
-            usb_control::handle_in(ep);
+            usb_control::handle_in(&mut *ep);
         }
     }
 
@@ -574,10 +574,10 @@ fn handle_class_request(ep: &mut usb_endpoint::Endpoint, setup: [u8; 8])
         0x21 =>
         {
             //usb_driver::send_zero_length_packet(0);
-
             unsafe
             {
-                ep.data_buffer[..8].copy_from_slice(&LINE_CODING);
+                let line_coding = &*(&raw const LINE_CODING);
+                ep.data_buffer[..8].copy_from_slice(line_coding);
             }
 
             ep.length = 7;
@@ -632,10 +632,7 @@ pub fn handle_out(ep: &mut usb_endpoint::Endpoint)
         {
             if len == 7
             {
-                unsafe
-                {
-                    usb_driver::pma_read(ep.rx_addr, &mut LINE_CODING, 8);
-                }
+                usb_driver::pma_read(ep.rx_addr, &raw mut LINE_CODING, 8);
             }
 
             // Status stage (ZLP)
@@ -660,7 +657,9 @@ fn send_echo(data: &[u8])
         // let ep_in = &mut EP0_CONTROL;
         // let ep_in = &mut EP2_BULK_OUT;
         // let ep_in = &mut EP1_INTERRUPT_IN;
-        let ep_in = &mut EP3_BULK_IN;
+
+        let ep_in = &raw mut EP3_BULK_IN;
+        let ep_in = &mut *ep_in;
         let len = data.len().min(64);
 
         ep_in.data_buffer[..len].copy_from_slice(&data[..len]);
@@ -753,14 +752,14 @@ fn configure_epns()
     unsafe 
     {
         // usb_driver::configure_ep(&mut EP0_CONTROL, usb_types::EndpointType::CONTROL);
-        usb_driver::configure_ep(&mut EP1_INTERRUPT_IN, usb_types::EndpointType::INTERRUPT);
+        usb_driver::configure_ep(&raw mut EP1_INTERRUPT_IN, usb_types::EndpointType::INTERRUPT);
         usb_driver::set_stat_tx_nak(EP1_INTERRUPT_IN.number as usize);
         
-        usb_driver::configure_ep(&mut EP2_BULK_OUT, usb_types::EndpointType::BULK);
+        usb_driver::configure_ep(&raw mut EP2_BULK_OUT, usb_types::EndpointType::BULK);
         //usb_driver::write_rx_count(EP2_BULK_OUT.number as usize, 64);
         usb_driver::set_stat_rx_valid(EP2_BULK_OUT.number as usize);
         
-        usb_driver::configure_ep(&mut EP3_BULK_IN, usb_types::EndpointType::BULK);
+        usb_driver::configure_ep(&raw mut EP3_BULK_IN, usb_types::EndpointType::BULK);
         usb_driver::set_stat_tx_nak(EP3_BULK_IN.number as usize);
     }
 }
@@ -771,12 +770,10 @@ pub fn init()
     crate::usb_peripheral::init();
     // Configure endpoints for CDC class
     //configure_epns();
-    unsafe 
-    {
-        usb_driver::configure_ep(&mut EP0_CONTROL, usb_types::EndpointType::CONTROL);
-        // usb_driver::set_stat_tx_nak(0);
-        // usb_driver::set_stat_rx_valid(0);
-    }
+
+    usb_driver::configure_ep(&raw mut EP0_CONTROL, usb_types::EndpointType::CONTROL);
+    // usb_driver::set_stat_tx_nak(0);
+    // usb_driver::set_stat_rx_valid(0);
 
     usb_driver::enable_usb_peripheral();
 }
