@@ -24,11 +24,11 @@ jobs:
         with:
           name: firmware-elf
         #   path: target/thumbv7m-none-eabi/release/*.elf
-          path: target/thumbv7m-none-eabi/release/sensory-fusion
+          path: target/thumbv7m-none-eabi/release/sensory_fusion
     
       - name: Generate BIN
-        run: cargo objcopy --release --target thumbv7m-none-eabi -- -O binary target/thumbv7m-none-eabi/release/sensory-fusion.bin
-            # llvm-objcopy -O binary target/thumbv7m-none-eabi/release/sensory-fusion target/thumbv7m-none-eabi/release/sensory-fusion.bin
+        run: cargo objcopy --release --target thumbv7m-none-eabi -- -O binary target/thumbv7m-none-eabi/release/sensory_fusion.bin
+            # llvm-objcopy -O binary target/thumbv7m-none-eabi/release/sensory_fusion target/thumbv7m-none-eabi/release/sensory_fusion.bin
 
       - name: Upload BIN
         uses: actions/upload-artifact@v4
@@ -37,8 +37,8 @@ jobs:
           path: target/thumbv7m-none-eabi/release/*.bin
 
       - name: Generate HEX
-        run: cargo objcopy --release --target thumbv7m-none-eabi -- -O ihex target/thumbv7m-none-eabi/release/sensory-fusion.hex
-            # llvm-objcopy -O ihex target/thumbv7m-none-eabi/release/sensory-fusion target/thumbv7m-none-eabi/release/sensory-fusion.hex
+        run: cargo objcopy --release --target thumbv7m-none-eabi -- -O ihex target/thumbv7m-none-eabi/release/sensory_fusion.hex
+            # llvm-objcopy -O ihex target/thumbv7m-none-eabi/release/sensory_fusion target/thumbv7m-none-eabi/release/sensory_fusion.hex
 
       - name: Upload HEX
         uses: actions/upload-artifact@v4
